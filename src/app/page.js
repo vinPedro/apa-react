@@ -1,3 +1,4 @@
+import Botao from "@/components/Botao";
 import Image from "next/image";
 
 export default function Home() {
@@ -50,6 +51,7 @@ export default function Home() {
             Read our docs
           </a>
         </div>
+        <Botao/>
       </main>
       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
         <a
