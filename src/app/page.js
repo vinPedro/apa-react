@@ -40,7 +40,7 @@ export default function HomePage() {
 
               <Botao maximo={700}>Entrar</Botao>
 
-              <Link href="/Instituicoes/ubs">
+              <Link href="/cadastro">
                 <Botao
                   maximo={700}
                   background="var(--color-botao-terceira)"
