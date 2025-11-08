@@ -6,29 +6,17 @@ import Campo from "@/components/Campo";
 import DivFormulario from "@/components/DivFormulario";
 import Formulario from "@/components/Formulario";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 export default function HomePage() {
-  const { profile, isAuthenticated } = useAuth();
-  const router = useRouter();
-
- 
-  useEffect(() => {
-    if (isAuthenticated) {
-      if (profile === "admin") router.push("/admin");
-      if (profile === "ProfissionaldeSaude") router.push("/ProfissionaldeSaude");
-      if (profile === "Paciente") router.push("/Paciente");
-    }
-  }, [isAuthenticated, profile]);
+  const { login } = useAuth();
 
   return (
     <div className="flex justify-center items-center min-h-screen w-full p-4">
       <DivFormulario>
         <Formulario
           initialValues={{ senha: "", login: "" }}
-          onSubmit={(data) => console.log(data)}
           titulo="Assistente de Pronto Atendimento"
+          onSubmit={(data) => login(data.login, data.senha)}
         >
           {({ formData, handleChange }) => (
             <>
