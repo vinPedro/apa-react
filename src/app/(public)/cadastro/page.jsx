@@ -2,17 +2,18 @@
 
 import Botao from "@/components/Botao";
 import Campo from "@/components/Campo";
+import DivBotoes from "@/components/DivBotoes";
+import DivFormulario from "@/components/DivFormulario";
 import Formulario from "@/components/Formulario";
 import Link from "next/link";
 
 export default function TelaCadastro() {
     return (
-        <div className="flex justify-center items-center h-screen p-2">
-            <div className="flex flex-col justify-center rounded-3xl shadow-[0_0px_10px_rgba(0,0,0,0.20)] m-1 max-w-[700px] min-w-[300px] w-full max-h-[600px] min-h-fit h-full">
-                <h1 className="text-center !text-[clamp(25px,5vw,30px)] !font-bold mb-[clamp(30px,5vw,50px)]">Cadastro do Paciente:</h1>
+            <DivFormulario maxWidth={700} minWidth={300} maxHeight={600}>
                 <Formulario
                     initialValues={{ nome: "", cpf: "", nasc: "", sus: "", senha: "" }}
                     onSubmit={(data) => console.log(data)}
+                    titulo="Cadastro do Paciente:"
                 >
                     {({ formData, handleChange }) => (
                         <>
@@ -26,18 +27,20 @@ export default function TelaCadastro() {
 
                             <Campo label="Senha:" placeholder="Senha" name="senha" value={formData.data} type="password" onChange={handleChange}></Campo>
 
-                            <div className="flex justify-end space-x-5">
+                            <DivBotoes>
+
                                 <Link href="/">
                                     <Botao background="var(--color-botao-terceira)" color="var(--color-text-botao-secundaria)" maximo={150} type="button">Cancelar</Botao>
                                 </Link>
+                                
+                                <div>
+                                    <Botao >Salvar</Botao>
+                                </div>
 
-                                <Botao >Salvar</Botao>
-
-                            </div>
+                            </DivBotoes>
                         </>
                     )}
                 </Formulario>
-            </div>
-        </div>
+            </DivFormulario>
     );
 }

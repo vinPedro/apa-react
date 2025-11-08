@@ -2,19 +2,18 @@
 
 import Botao from "@/components/Botao";
 import Campo from "@/components/Campo";
+import DivFormulario from "@/components/DivFormulario";
 import Formulario from "@/components/Formulario";
 import Link from "next/link";
 
 export default function Login() {
   return (
-    <div className="flex justify-center items-center h-screen p-2">
-      <div className="flex flex-col justify-center rounded-3xl shadow-[0_0px_10px_rgba(0,0,0,0.20)] m-1 py-[30px] max-w-[500px] min-w-[300px] w-full max-h-[400px] min-h-fit h-full">
-        <h1 className="text-center !text-[clamp(25px,5vw,30px)] !font-bold">
-          Assitente de Pronto <br /> Atendimento
-        </h1>
+      <DivFormulario>
+        
         <Formulario
           initialValues={{ senha: "", login: "" }}
           onSubmit={(data) => console.log(data)}
+          titulo="Assitente de Pronto Atendimento"
         >
           {({ formData, handleChange }) => (
             <>
@@ -51,11 +50,10 @@ export default function Login() {
           )}
         </Formulario>
 
-        <Link href="/home" className="text-center text-primaria">
+        <Link href="/senha" className="text-center text-primaria">
           {" "}
           Esqueci minha senha
         </Link>
-      </div>
-    </div>
+      </DivFormulario>
   );
 }

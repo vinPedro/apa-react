@@ -9,7 +9,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="pt-br">
       <body>
-        {children}
+        {<div className="flex justify-center items-center h-screen p-2">
+          {children}
+        </div>}  
       </body>
     </html>
   );
