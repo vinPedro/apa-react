@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export default function Formulario({ initialValues, onSubmit, children }) {
+export default function Formulario({ initialValues, onSubmit, children, titulo}) {
     const [formData, setFormData] = useState(initialValues);
 
     function handleChange(e) {
@@ -20,6 +20,7 @@ export default function Formulario({ initialValues, onSubmit, children }) {
 
     return (
         <div className="px-6 py-3">
+            <h1 className="text-center !text-[clamp(25px,5vw,30px)] !font-bold mb-[clamp(10px,5vw,30px)]">{titulo}</h1>
             <form onSubmit={handleSubmit} className="flex flex-col min-w-[300px] max-w-[700px] w-full space-y-5">
                {children({ formData, handleChange })}
             </form>
