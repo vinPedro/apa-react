@@ -29,12 +29,12 @@ export default function TelaCadastro() {
 
                             <DivBotoes>
 
-                                <Link href="/">
-                                    <Botao background="var(--color-botao-terceira)" color="var(--color-text-botao-secundaria)" maximo={150} type="button">Cancelar</Botao>
+                                <Link href="/" className="w-full max-w-[170px]">
+                                    <Botao background="var(--color-botao-terceira)" color="var(--color-text-botao-secundaria)" maximo={170} type="button">Cancelar</Botao>
                                 </Link>
                                 
-                                <div>
-                                    <Botao >Salvar</Botao>
+                                <div className="w-full max-w-[170px]">
+                                    <Botao>Salvar</Botao>
                                 </div>
 
                             </DivBotoes>
