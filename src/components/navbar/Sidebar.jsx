@@ -26,7 +26,7 @@ function Sidebar() {
             
               {profile === "admin" && (
                 <>
-                  <NavItem to="/" label="Painel Admin" />
+                  <NavItem to="/admin" label="Painel Admin" />
                   <NavItem to="/Instituicoes/ubs" label="Cadastrar Posto de Saúde (PSF)" />
                   <NavItem to="/CadastroProfissional" label="Cadastro de Profissional de Saúde" />
                   <NavItem to="/Especialidades" label="Especialidades Médicas" />

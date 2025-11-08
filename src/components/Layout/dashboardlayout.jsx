@@ -3,7 +3,7 @@
 
 
 import Sidebar from "../navbar/Sidebar"; 
-import NavItem from "../navbar/SidebarItem";
+
 
 
 function DashboardLayout({ children }) {
