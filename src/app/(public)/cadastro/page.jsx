@@ -2,6 +2,7 @@
 
 import Botao from "@/components/Botao";
 import Campo from "@/components/Campo";
+import ComboBox from "@/components/ComboBox";
 import DivBotoes from "@/components/DivBotoes";
 import DivFormulario from "@/components/DivFormulario";
 import Formulario from "@/components/Formulario";
@@ -20,14 +21,35 @@ export default function TelaCadastro() {
         if (!formData.nome) {
             newErrors.nome = "Nome é obrigatório.";
         }
+        if (!formData.cns) {
+            newErrors.cns = "CNS é obrigatório.";
+        }
         if (!formData.cpf) {
             newErrors.cpf = "CPF é obrigatório.";
         }
         if (!formData.nasc) {
             newErrors.nasc = "Data de Nascimento é obrigatória.";
         }
+        if (!formData.sexo) {
+            newErrors.sexo = "Sexo é obrigatória.";
+        }
+        if (!formData.ubs) {
+            newErrors.ubs = "UBS é obrigatória.";
+        }
         if (!formData.sus) {
             newErrors.sus = "SUS é obrigatório.";
+        }
+        if (!formData.raca) {
+            newErrors.raca = "Raça/Cor é obrigatório.";
+        }
+        if (!formData.end) {
+            newErrors.end = "Endereço é obrigatório.";
+        }
+        if (!formData.tel) {
+            newErrors.tel = "Telefone é obrigatório.";
+        }
+         if (!formData.email) {
+            newErrors.email = "E-mail é obrigatório.";
         }
         if (!formData.senha) {
             newErrors.senha = "Senha é obrigatória.";
@@ -49,29 +71,39 @@ export default function TelaCadastro() {
     
     return (
         <div className="flex justify-center items-center min-h-screen w-full p-4">
-            <DivFormulario maxWidth={700} minWidth={300} maxHeight={600}>
+            <DivFormulario maxWidth={700} minWidth={350}>
                 <Formulario
-                    initialValues={{ nome: "", cpf: "", nasc: "", sus: "", senha: "" }}
+                    initialValues={{ nome: "", cns: "", cpf: "", nasc: "", sexo:  "", ubs: "", sus: "", raca: "", end: "", tel: "", email: "", senha: "" }}
                     onSubmit={handleSubmit} //  Usar o novo handleSubmit
                     titulo="Cadastro do Paciente:"
                 >
-                    {({ formData, handleChange }) => (
+                    {({ formData, handleChange, handleSelectChange }) => (
                         <>
                             <Campo 
                                 label="Nome:"
                                 placeholder="Nome Completo"
                                 name="nome"
-                                value={formData.nome || ''}
+                                value={formData.nome}
                                 type="text"
                                 onChange={handleChange}
                                 error={errors.nome} //  Passar o erro para o Campo
                             />
 
                             <Campo 
+                                label="CNS:"
+                                placeholder="Cartao nacional de saude"
+                                name="cns"
+                                value={formData.cns}
+                                type="number"
+                                onChange={handleChange}
+                                error={errors.cns}
+                            />
+
+                            <Campo 
                                 label="CPF:"
                                 placeholder="00000000000"
                                 name="cpf"
-                                value={formData.cpf || ''}
+                                value={formData.cpf}
                                 type="number"
                                 onChange={handleChange}
                                 error={errors.cpf} //  Passar o erro
@@ -80,27 +112,83 @@ export default function TelaCadastro() {
                             <Campo 
                                 label="Data de Nascimento:"
                                 name="nasc"
-                                value={formData.nasc || ''}
+                                value={formData.nasc}
                                 type="date"
                                 onChange={handleChange}
                                 error={errors.nasc} //  Passar o erro
+                            />
+
+                            <ComboBox
+                                label="Sexo:"
+                                name="sexo"
+                                options={["Feminino", "Masculino", "Prefiro não dizer"]}
+                                value={formData.sexo}
+                                onChange={handleSelectChange}
+                                error={errors.sexo}
+                            />
+
+                            <ComboBox
+                                label="UBS:"
+                                name="ubs"
+                                options={["UBS1", "UBS2", "UBS3"]}
+                                value={formData.ubs}
+                                onChange={handleSelectChange}
+                                error={errors.ubs}
                             />
 
                             <Campo 
                                 label="SUS:"
                                 placeholder="Número do SUS: 0000000000"
                                 name="sus"
-                                value={formData.sus || ''}
+                                value={formData.sus}
                                 type="number"
                                 onChange={handleChange}
                                 error={errors.sus} //  Passar o erro
+                            />
+
+                            <ComboBox
+                                label="Raça/Cor:"
+                                name="raca"
+                                options={["Branco", "Pardo", "Preto"]}
+                                value={formData.raca}
+                                onChange={handleSelectChange}
+                                error={errors.raca}
+                            />
+
+                            <Campo 
+                                label="Endereço:"
+                                placeholder="Rua/Bairro/N°"
+                                name="end"
+                                value={formData.end}
+                                onChange={handleChange}
+                                error={errors.end}
+                            />
+
+                            <Campo 
+                                label="Telefone:"
+                                placeholder="Número com DDD sem espaço ou traço: 00000000000"
+                                name="tel"
+                                value={formData.tel}
+                                type="number"
+                                onChange={handleChange}
+                                error={errors.tel}
+                            />
+
+                            <Campo 
+                                label="E-mail:"
+                                placeholder="email@gmail.com"
+                                name="email"
+                                value={formData.email}
+                                type="email"
+                                onChange={handleChange}
+                                error={errors.email}
                             />
 
                             <Campo 
                                 label="Senha:"
                                 placeholder="Senha"
                                 name="senha"
-                                value={formData.senha || ''}
+                                value={formData.senha}
                                 type="password"
                                 onChange={handleChange}
                                 error={errors.senha} //  Passar o erro
