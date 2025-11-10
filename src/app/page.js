@@ -6,9 +6,38 @@ import Campo from "@/components/Campo";
 import DivFormulario from "@/components/DivFormulario";
 import Formulario from "@/components/Formulario";
 import Link from "next/link";
+import { useState } from "react"; // 
 
 export default function HomePage() {
   const { login } = useAuth();
+  
+  // estado para os erros de validação
+  const [errors, setErrors] = useState({});
+
+  //  função de validação
+  const validate = (formData) => {
+    const newErrors = {};
+
+    if (!formData.login) {
+      newErrors.login = "CPF/Identificador é obrigatório.";
+    }
+    if (!formData.senha) {
+      newErrors.senha = "Senha é obrigatória.";
+    }
+
+    return newErrors;
+  };
+
+  // 'handleSubmit' que usa a validação
+  const handleSubmit = (data) => {
+    const validationErrors = validate(data);
+    setErrors(validationErrors); // Define os erros (se houver)
+
+    // Se o objeto de erros estiver vazio, significa que não há erros
+    if (Object.keys(validationErrors).length === 0) {
+      login(data.login, data.senha);
+    }
+  };
 
   return (
     <div className="flex justify-center items-center min-h-screen w-full p-4">
@@ -16,7 +45,7 @@ export default function HomePage() {
         <Formulario
           initialValues={{ senha: "", login: "" }}
           titulo="Assistente de Pronto Atendimento"
-          onSubmit={(data) => login(data.login, data.senha)}
+          onSubmit={handleSubmit} //  Usar o novo handleSubmit
         >
           {({ formData, handleChange }) => (
             <>
@@ -27,6 +56,7 @@ export default function HomePage() {
                 value={formData.login || ""}
                 type="text"
                 onChange={handleChange}
+                error={errors.login} //  Passar o erro para o Campo
               />
 
               <Campo
@@ -36,6 +66,7 @@ export default function HomePage() {
                 value={formData.senha || ""}
                 type="password"
                 onChange={handleChange}
+                error={errors.senha} //Passar o erro para o Campo
               />
 
               <Botao maximo={700}>Entrar</Botao>
