@@ -6,14 +6,14 @@ import DivBotoes from "@/components/DivBotoes";
 import DivFormulario from "@/components/DivFormulario";
 import Formulario from "@/components/Formulario";
 import Link from "next/link";
-import { useState } from "react"; // 1. Importar o useState
+import { useState } from "react"; 
 
 export default function TelaCadastro() {
     
-    // 2. Criar estado para os erros de validação
+    // estado para os erros de validação
     const [errors, setErrors] = useState({});
 
-    // 3. Criar função de validação
+    // função de validação
     const validate = (formData) => {
         const newErrors = {};
 
@@ -52,7 +52,7 @@ export default function TelaCadastro() {
             <DivFormulario maxWidth={700} minWidth={300} maxHeight={600}>
                 <Formulario
                     initialValues={{ nome: "", cpf: "", nasc: "", sus: "", senha: "" }}
-                    onSubmit={handleSubmit} // 5. Usar o novo handleSubmit
+                    onSubmit={handleSubmit} //  Usar o novo handleSubmit
                     titulo="Cadastro do Paciente:"
                 >
                     {({ formData, handleChange }) => (
@@ -64,7 +64,7 @@ export default function TelaCadastro() {
                                 value={formData.nome || ''}
                                 type="text"
                                 onChange={handleChange}
-                                error={errors.nome} // 6. Passar o erro para o Campo
+                                error={errors.nome} //  Passar o erro para o Campo
                             />
 
                             <Campo 
@@ -74,7 +74,7 @@ export default function TelaCadastro() {
                                 value={formData.cpf || ''}
                                 type="number"
                                 onChange={handleChange}
-                                error={errors.cpf} // 6. Passar o erro
+                                error={errors.cpf} //  Passar o erro
                             />
 
                             <Campo 
@@ -83,7 +83,7 @@ export default function TelaCadastro() {
                                 value={formData.nasc || ''}
                                 type="date"
                                 onChange={handleChange}
-                                error={errors.nasc} // 6. Passar o erro
+                                error={errors.nasc} //  Passar o erro
                             />
 
                             <Campo 
@@ -93,7 +93,7 @@ export default function TelaCadastro() {
                                 value={formData.sus || ''}
                                 type="number"
                                 onChange={handleChange}
-                                error={errors.sus} // 6. Passar o erro
+                                error={errors.sus} //  Passar o erro
                             />
 
                             <Campo 
@@ -103,7 +103,7 @@ export default function TelaCadastro() {
                                 value={formData.senha || ''}
                                 type="password"
                                 onChange={handleChange}
-                                error={errors.senha} // 6. Passar o erro
+                                error={errors.senha} //  Passar o erro
                             />
 
                             <DivBotoes>
