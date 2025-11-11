@@ -34,7 +34,7 @@ function Sidebar() {
               
               {profile === "ProfissionaldeSaude" && (
                 <>
-                  <NavItem to="/ProfissionaldeSaude" label="Painel do Profissional" />
+                  <NavItem to="/ProfissionalDeSaude" label="Painel do Profissional" />
                   <NavItem to="/CadastrarPacientes" label="Cadastrar Pacientes" />
                   <NavItem to="/FichasAtivas" label="Visualizar Fichas Ativas" />
                   <NavItem to="/VisualizarProntuarios" label="Visualizar Prontuários" />

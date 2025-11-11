@@ -62,7 +62,7 @@ export function AuthProvider({ children }) {
       // <-- 6. Redireciona com base no perfil
       if (userProfile === "admin") router.push("/admin");
       if (userProfile === "Paciente") router.push("/Paciente");
-      if (userProfile === "ProfissionaldeSaude") router.push("/ProfissionaldeSaude");
+      if (userProfile === "ProfissionaldeSaude") router.push("/ProfissionalDeSaude");
 
     } catch (error) {
       console.error("Erro no login:", error);
