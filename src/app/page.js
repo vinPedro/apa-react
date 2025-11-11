@@ -6,36 +6,41 @@ import Campo from "@/components/Campo";
 import DivFormulario from "@/components/DivFormulario";
 import Formulario from "@/components/Formulario";
 import Link from "next/link";
-import { useState } from "react"; // 
+import { useState } from "react"; 
 
 export default function HomePage() {
   const { login } = useAuth();
   
-  // estado para os erros de validação
   const [errors, setErrors] = useState({});
+  
+  const [apiError, setApiError] = useState(null); // Para erros do backend
+  const [isLoading, setIsLoading] = useState(false);
 
-  //  função de validação
   const validate = (formData) => {
+    // ... (sua validação local continua igual)
     const newErrors = {};
-
-    if (!formData.login) {
-      newErrors.login = "CPF/Identificador é obrigatório.";
-    }
-    if (!formData.senha) {
-      newErrors.senha = "Senha é obrigatória.";
-    }
-
+    if (!formData.login) newErrors.login = "CPF/Identificador é obrigatório.";
+    if (!formData.senha) newErrors.senha = "Senha é obrigatória.";
     return newErrors;
   };
 
-  // 'handleSubmit' que usa a validação
-  const handleSubmit = (data) => {
+  const handleSubmit = async (data) => {
     const validationErrors = validate(data);
-    setErrors(validationErrors); // Define os erros (se houver)
+    setErrors(validationErrors); 
+    setApiError(null); // Limpa erros antigos da API
 
-    // Se o objeto de erros estiver vazio, significa que não há erros
     if (Object.keys(validationErrors).length === 0) {
-      login(data.login, data.senha);
+      setIsLoading(true);
+      try {
+        // Tenta fazer o login
+        await login(data.login, data.senha);
+        // Se deu certo, o AuthContext vai redirecionar
+      } catch (error) {
+        // Se deu errado, captura o erro que o AuthContext lançou
+        setApiError(error.message); 
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -45,10 +50,18 @@ export default function HomePage() {
         <Formulario
           initialValues={{ senha: "", login: "" }}
           titulo="Assistente de Pronto Atendimento"
-          onSubmit={handleSubmit} //  Usar o novo handleSubmit
+          onSubmit={handleSubmit}
         >
           {({ formData, handleChange }) => (
             <>
+              {/* --- 3. ADICIONE O BLOCO DE ERRO DA API --- */}
+              {apiError && (
+                <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded text-center">
+                  <strong>Falha no login:</strong> {apiError}
+                </div>
+              )}
+              {/* --- FIM DO BLOCO DE ERRO --- */}
+
               <Campo
                 label="CPF/Identificador:"
                 placeholder="CPF/Identificador"
@@ -56,7 +69,8 @@ export default function HomePage() {
                 value={formData.login || ""}
                 type="text"
                 onChange={handleChange}
-                error={errors.login} //  Passar o erro para o Campo
+                error={errors.login}
+                disabled={isLoading} // Desabilitar campo
               />
 
               <Campo
@@ -66,16 +80,20 @@ export default function HomePage() {
                 value={formData.senha || ""}
                 type="password"
                 onChange={handleChange}
-                error={errors.senha} //Passar o erro para o Campo
+                error={errors.senha}
+                disabled={isLoading} // Desabilitar campo
               />
 
-              <Botao maximo={700}>Entrar</Botao>
+              <Botao maximo={700} disabled={isLoading}>
+                {isLoading ? "Entrando..." : "Entrar"}
+              </Botao>
 
               <Link href="/cadastro">
                 <Botao
                   maximo={700}
                   background="var(--color-botao-terceira)"
                   color="var(--color-text-botao-secundaria)"
+                  disabled={isLoading} // Desabilitar botão
                 >
                   Cadastrar-se
                 </Botao>

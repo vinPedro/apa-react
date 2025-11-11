@@ -1,11 +1,9 @@
-// src/components/forms/ProfissionalCadastroForm.jsx
 'use client';
 
 import React, { useState } from 'react';
-import { useAuth } from '@/AuthContext'; // <-- 1. Importar o useAuth
+import { useAuth } from '@/AuthContext';
 
-// <-- 2. Lista de conselhos ATUALIZADA para bater com o Enum do Backend
-//
+// Lista de conselhos baseada no Enum do Backend
 const MOCK_CONSELHOS = [
     { id: "CRM", nome: "CRM - Conselho Regional de Medicina" },
     { id: "COREN", nome: "COREN - Conselho Regional de Enfermagem" },
@@ -17,19 +15,19 @@ const MOCK_CONSELHOS = [
 ];
 
 export default function ProfissionalCadastroForm() {
-    const { token } = useAuth(); // <-- 3. Obter o token
+    const { token } = useAuth(); // Obter o token do contexto
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null); // Estado para a mensagem de sucesso
 
     const [formData, setFormData] = useState({
         nome: '',
         cpf: '',
         cns: '',
-        conselhoSelecionado: '', // <-- Vai guardar o ID (ex: "CRM")
-        // novoConselho: '', // Removido, pois a API não suporta
+        conselhoSelecionado: '',
         registroConselho: '',
         ufConselho: '',
-        ubsVinculadaId: '', // <-- 4. Corrigido para ubsVinculadaId
+        ubsVinculadaId: '',
         emailInstitucional: '',
         telefoneContato: '',
         senha: '',
@@ -55,30 +53,28 @@ export default function ProfissionalCadastroForm() {
         setIsModalOpen(false);
     };
 
-    // <-- 5. Implementar o handleSubmit
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!token) {
-            alert("Erro: Você não está autenticado.");
+            setError("Erro: Você não está autenticado.");
             return;
         }
 
         if (!formData.conselhoSelecionado) {
-             alert("Por favor, selecione um Conselho Profissional.");
+             setError("Por favor, selecione um Conselho Profissional.");
              return;
         }
         
-        // <-- 6. Mapear o state do formulário para o DTO da API
-        //
+        // Mapeia o estado do formulário para o DTO da API
         const dataToSubmit = {
-            nomeCompleto: formData.nome, // Mapeado
+            nomeCompleto: formData.nome,
             cpf: formData.cpf,
             cns: formData.cns,
-            conselhoProfissional: formData.conselhoSelecionado, // Mapeado
+            conselhoProfissional: formData.conselhoSelecionado,
             registroConselho: formData.registroConselho,
             ufConselho: formData.ufConselho,
-            ubsVinculadaId: parseInt(formData.ubsVinculadaId, 10), // Mapeado e convertido para número
+            ubsVinculadaId: parseInt(formData.ubsVinculadaId, 10),
             emailInstitucional: formData.emailInstitucional,
             telefoneContato: formData.telefoneContato,
             senha: formData.senha,
@@ -86,14 +82,15 @@ export default function ProfissionalCadastroForm() {
 
         setIsLoading(true);
         setError(null);
+        setSuccess(null); // Limpa mensagens anteriores
 
         try {
-            // <-- 7. Fazer o fetch para o endpoint de profissionais
+            // Faz o fetch para o endpoint de profissionais
             const response = await fetch('http://localhost:8080/api/profissionais', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` // Enviar o token
+                    'Authorization': `Bearer ${token}` // Envia o token
                 },
                 body: JSON.stringify(dataToSubmit),
             });
@@ -103,19 +100,31 @@ export default function ProfissionalCadastroForm() {
                 throw new Error(erroData.message || `Erro ${response.status}: Falha ao cadastrar profissional`);
             }
 
-            alert(`Profissional "${formData.nome}" cadastrado com sucesso!`);
-            // TODO: Limpar o formulário aqui se desejar
+            // Define a mensagem de sucesso
+            setSuccess(`Profissional "${formData.nome}" cadastrado com sucesso!`);
+            
+            // Limpa o formulário
+            setFormData({
+                nome: '',
+                cpf: '',
+                cns: '',
+                conselhoSelecionado: '',
+                registroConselho: '',
+                ufConselho: '',
+                ubsVinculadaId: '',
+                emailInstitucional: '',
+                telefoneContato: '',
+                senha: '',
+            });
 
         } catch (err) {
             console.error('Erro ao cadastrar Profissional:', err);
-            setError(err.message);
-            alert(`Erro: ${err.message}`);
+            setError(err.message); // Define a mensagem de erro
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Ajusta o texto do botão de conselho
     const conselhoText = MOCK_CONSELHOS.find(c => c.id === formData.conselhoSelecionado)?.nome || 'Clique para escolher...';
 
     return (
@@ -127,9 +136,17 @@ export default function ProfissionalCadastroForm() {
                 Dados do Novo Profissional
             </h2>
 
+            {/* Mensagem de Erro */}
             {error && (
                 <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
                     <strong>Falha no cadastro:</strong> {error}
+                </div>
+            )}
+
+            {/* Mensagem de Sucesso */}
+            {success && (
+                <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+                    <strong>Sucesso!</strong> {success}
                 </div>
             )}
 
@@ -201,8 +218,6 @@ export default function ProfissionalCadastroForm() {
                         {conselhoText}
                         <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
                     </button>
-
-                    {/* Lógica de "novoConselho" removida, pois a API não suporta */}
                 </div>
 
                 {/* Registro Conselho */}
@@ -240,14 +255,14 @@ export default function ProfissionalCadastroForm() {
                     />
                 </div>
 
-                {/* <-- 8. CAMPO DE UBS CORRIGIDO --> */}
+                {/* ID da UBS Vinculada */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                         ID da UBS Vinculada
                     </label>
                     <input
-                        type="number" // Mudei para number
-                        name="ubsVinculadaId" // Mudei o name
+                        type="number"
+                        name="ubsVinculadaId"
                         value={formData.ubsVinculadaId}
                         onChange={handleChange}
                         required
@@ -256,8 +271,6 @@ export default function ProfissionalCadastroForm() {
                         disabled={isLoading}
                     />
                 </div>
-                {/* <-- FIM DA CORREÇÃO --> */}
-
 
                 {/* E-mail Institucional */}
                 <div>
@@ -349,7 +362,7 @@ export default function ProfissionalCadastroForm() {
                                 {filteredConselhos.map((c) => (
                                     <li
                                         key={c.id}
-                                        onClick={() => handleConselhoChange(c.id)} // Passa o ID (string do Enum)
+                                        onClick={() => handleConselhoChange(c.id)}
                                         className={`p-3 cursor-pointer hover:bg-blue-50 ${
                                             formData.conselhoSelecionado === c.id ? 'bg-blue-100 font-semibold' : ''
                                         }`}

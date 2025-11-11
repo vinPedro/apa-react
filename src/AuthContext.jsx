@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState } from "react";
 import { useRouter } from "next/navigation";
-import { jwtDecode } from "jwt-decode"; // <-- 1. Importa a biblioteca
+import { jwtDecode } from "jwt-decode"; 
 
 const AuthContext = createContext(null);
 
@@ -37,8 +37,8 @@ export function AuthProvider({ children }) {
       });
 
       if (!response.ok) {
-        alert("Usuário ou senha inválidos");
-        return;
+        throw new Error("Usuário ou senha inválidos");
+      
       }
 
       // API retorna { token: "..." }
@@ -51,8 +51,8 @@ export function AuthProvider({ children }) {
       const userProfile = mapBackendRoleToProfile(decodedToken.role); 
       
       if (!userProfile) {
-        alert("Perfil de usuário não reconhecido.");
-        return;
+        throw new Error("Perfil de usuário não reconhecido.");
+        
       }
 
       // <-- 5. Salva o token e o perfil extraído
@@ -66,7 +66,7 @@ export function AuthProvider({ children }) {
 
     } catch (error) {
       console.error("Erro no login:", error);
-      alert("Erro ao tentar fazer login. Verifique o console.");
+      throw error;
     }
   };
 

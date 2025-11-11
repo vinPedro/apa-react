@@ -7,6 +7,7 @@ export default function UbsCadastroForm() {
     const { token } = useAuth(); // <-- 2. Obter o token do contexto
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null); // <-- ADICIONADO
 
     const [formData, setFormData] = useState({
         // Renomear para corresponder ao DTO do backend
@@ -17,8 +18,6 @@ export default function UbsCadastroForm() {
         bairro: '',
         municipio: '',
         uf: '',
-        // O campo 'telefone' não existe no DTO UnidadeSaudeDTO
-        // Vamos removê-lo do envio, mas manter no form se quiser
         telefone: '', 
     });
 
@@ -27,20 +26,22 @@ export default function UbsCadastroForm() {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    // <-- 3. Transformar o handleSubmit em assíncrono
     const handleSubmit = async (e) => {
         e.preventDefault();
         
         // Validação simples para garantir que o admin está logado
         if (!token) {
-            alert("Erro: Você não está autenticado. Faça login novamente.");
+            
+            setError("Erro: Você não está autenticado. Faça login novamente.");
+            
             return;
         }
 
         setIsLoading(true);
         setError(null);
+        setSuccess(null);
 
-        // <-- 4. Preparar os dados para enviar (exatamente como o DTO)
+        // Preparar os dados para enviar (exatamente como o DTO)
         const dadosParaApi = {
             codigoCnes: formData.codigoCnes,
             cnpj: formData.cnpj,
@@ -52,12 +53,11 @@ export default function UbsCadastroForm() {
         };
 
         try {
-            // <-- 5. Fazer a requisição fetch para o endpoint da API
+            // Fazer a requisição fetch para o endpoint da API
             const response = await fetch('http://localhost:8080/api/unidades', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // <-- 6. Enviar o Token de autorização
                     'Authorization': `Bearer ${token}` 
                 },
                 body: JSON.stringify(dadosParaApi),
@@ -69,10 +69,8 @@ export default function UbsCadastroForm() {
                 throw new Error(erroData.message || `Erro ${response.status}: Falha ao cadastrar UBS`);
             }
 
-            // Se tudo deu certo
-            alert(`UBS "${formData.nome}" cadastrada com sucesso!`);
+            setSuccess(`UBS "${formData.nome}" cadastrada com sucesso!`);
             
-            // Limpar o formulário (opcional)
             setFormData({
                 codigoCnes: '', cnpj: '', nome: '', logradouro: '',
                 bairro: '', municipio: '', uf: '', telefone: '',
@@ -81,7 +79,7 @@ export default function UbsCadastroForm() {
         } catch (err) {
             console.error("Erro ao cadastrar UBS:", err);
             setError(err.message);
-            alert(`Erro: ${err.message}`);
+            
         } finally {
             setIsLoading(false);
         }
@@ -107,12 +105,18 @@ export default function UbsCadastroForm() {
                     </div>
                 )}
 
+                {success && (
+                    <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+                        <strong>Sucesso!</strong> {success}
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <div className="sm:col-span-1">
                         <label className="text-sm font-medium text-gray-700">Código CNES</label>
                         <input
                             type="text"
-                            name="codigoCnes" // <-- 7. Ajustar o 'name'
+                            name="codigoCnes"
                             value={formData.codigoCnes}
                             onChange={handleChange}
                             required
@@ -231,7 +235,7 @@ export default function UbsCadastroForm() {
                             : 'bg-blue-600 hover:bg-blue-700'
                         }
                     `}
-                    disabled={isLoading} // <-- 8. Desabilitar botão durante o envio
+                    disabled={isLoading}
                 >
                     {isLoading ? 'Cadastrando...' : 'Cadastrar UBS'}
                 </button>

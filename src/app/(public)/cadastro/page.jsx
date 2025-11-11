@@ -8,7 +8,7 @@ import DivFormulario from "@/components/DivFormulario";
 import Formulario from "@/components/Formulario";
 import Link from "next/link";
 import { useState } from "react"; 
-import { useRouter } from "next/navigation"; // Importar o router para redirecionar
+import { useRouter } from "next/navigation"; 
 
 // --- Mapeamento dos ENUMS do Backend ---
 const sexoOptions = [
@@ -85,10 +85,7 @@ export default function TelaCadastro() {
         setIsLoading(true);
 
         try {
-            // O PacienteService espera um Long no ID da UBS e no Telefone
-            //
-            // Nota: O DTO PacienteRequestDTO tem telefone como String, mas a entidade Paciente tem como int. 
-            // Vamos enviar como String, a API deve tratar. Vamos converter só o ID da UBS.
+            
             const dataToSubmit = {
                 ...data,
                 unidadeSaudeId: parseInt(data.unidadeSaudeId, 10),
@@ -102,7 +99,7 @@ export default function TelaCadastro() {
 
             if (!response.ok) {
                 const erroData = await response.json();
-                // Ex: "Email já cadastrado para outro usuário."
+                
                 throw new Error(erroData.message || `Erro ${response.status}`);
             }
 
@@ -263,7 +260,7 @@ export default function TelaCadastro() {
                                 placeholder="Número com DDD (só números)"
                                 name="telefone"
                                 value={formData.telefone}
-                                type="number"
+                                type="tel"
                                 onChange={handleChange}
                                 error={errors.telefone}
                                 disabled={isLoading}

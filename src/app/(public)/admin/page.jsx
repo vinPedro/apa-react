@@ -100,8 +100,7 @@ export default function AdminPage() {
       });
 
       if (!response.ok) {
-         // O delete do profissional no backend não tem validações,
-         // mas caso falhe por outro motivo (ex: BD)
+         
         throw new Error('Falha ao excluir profissional.');
       }
 
@@ -116,8 +115,6 @@ export default function AdminPage() {
       alert(`Erro: ${err.message}`);
     }
   };
-  // --- FIM DA NOVA FUNÇÃO ---
-
 
   if (!isAuthenticated || profile !== "admin") {
     return <div className="text-center p-10"><p>Redirecionando...</p></div>;
