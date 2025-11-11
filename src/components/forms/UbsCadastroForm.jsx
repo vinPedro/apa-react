@@ -1,17 +1,25 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useAuth } from '@/AuthContext'; // <-- 1. Importar o useAuth
 
 export default function UbsCadastroForm() {
+    const { token } = useAuth(); // <-- 2. Obter o token do contexto
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+
     const [formData, setFormData] = useState({
-        cnes: '',
+        // Renomear para corresponder ao DTO do backend
+        codigoCnes: '', 
         cnpj: '',
         nome: '',
         logradouro: '',
         bairro: '',
         municipio: '',
         uf: '',
-        telefone: '',
+        // O campo 'telefone' não existe no DTO UnidadeSaudeDTO
+        // Vamos removê-lo do envio, mas manter no form se quiser
+        telefone: '', 
     });
 
     const handleChange = (e) => {
@@ -19,9 +27,64 @@ export default function UbsCadastroForm() {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e) => {
+    // <-- 3. Transformar o handleSubmit em assíncrono
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        alert(`UBS "${formData.nome}" cadastrada com sucesso!`);
+        
+        // Validação simples para garantir que o admin está logado
+        if (!token) {
+            alert("Erro: Você não está autenticado. Faça login novamente.");
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        // <-- 4. Preparar os dados para enviar (exatamente como o DTO)
+        const dadosParaApi = {
+            codigoCnes: formData.codigoCnes,
+            cnpj: formData.cnpj,
+            nome: formData.nome,
+            logradouro: formData.logradouro,
+            bairro: formData.bairro,
+            municipio: formData.municipio,
+            uf: formData.uf,
+        };
+
+        try {
+            // <-- 5. Fazer a requisição fetch para o endpoint da API
+            const response = await fetch('http://localhost:8080/api/unidades', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // <-- 6. Enviar o Token de autorização
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify(dadosParaApi),
+            });
+
+            if (!response.ok) {
+                // Tenta ler a mensagem de erro do backend
+                const erroData = await response.json();
+                throw new Error(erroData.message || `Erro ${response.status}: Falha ao cadastrar UBS`);
+            }
+
+            // Se tudo deu certo
+            alert(`UBS "${formData.nome}" cadastrada com sucesso!`);
+            
+            // Limpar o formulário (opcional)
+            setFormData({
+                codigoCnes: '', cnpj: '', nome: '', logradouro: '',
+                bairro: '', municipio: '', uf: '', telefone: '',
+            });
+
+        } catch (err) {
+            console.error("Erro ao cadastrar UBS:", err);
+            setError(err.message);
+            alert(`Erro: ${err.message}`);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -37,19 +100,26 @@ export default function UbsCadastroForm() {
                     Cadastro de UBS
                 </h2>
 
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                {/* Exibição de Erro */}
+                {error && (
+                    <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                        <strong>Falha no cadastro:</strong> {error}
+                    </div>
+                )}
 
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <div className="sm:col-span-1">
                         <label className="text-sm font-medium text-gray-700">Código CNES</label>
                         <input
                             type="text"
-                            name="cnes"
-                            value={formData.cnes}
+                            name="codigoCnes" // <-- 7. Ajustar o 'name'
+                            value={formData.codigoCnes}
                             onChange={handleChange}
                             required
                             maxLength={7}
                             placeholder="Ex: 1234567"
                             className="w-full p-3 mt-1 border rounded-md"
+                            disabled={isLoading}
                         />
                     </div>
 
@@ -63,6 +133,7 @@ export default function UbsCadastroForm() {
                             required
                             placeholder="Ex: 12.345.678/0001-99"
                             className="w-full p-3 mt-1 border rounded-md"
+                            disabled={isLoading}
                         />
                     </div>
 
@@ -76,6 +147,7 @@ export default function UbsCadastroForm() {
                             required
                             placeholder="Ex: UBS Central"
                             className="w-full p-3 mt-1 border rounded-md"
+                            disabled={isLoading}
                         />
                     </div>
 
@@ -89,6 +161,7 @@ export default function UbsCadastroForm() {
                             required
                             placeholder="Ex: Rua das Flores"
                             className="w-full p-3 mt-1 border rounded-md"
+                            disabled={isLoading}
                         />
                     </div>
 
@@ -101,6 +174,7 @@ export default function UbsCadastroForm() {
                             onChange={handleChange}
                             required
                             className="w-full p-3 mt-1 border rounded-md"
+                            disabled={isLoading}
                         />
                     </div>
 
@@ -113,6 +187,7 @@ export default function UbsCadastroForm() {
                             onChange={handleChange}
                             required
                             className="w-full p-3 mt-1 border rounded-md"
+                            disabled={isLoading}
                         />
                     </div>
 
@@ -127,33 +202,38 @@ export default function UbsCadastroForm() {
                             required
                             className="w-full p-3 mt-1 border rounded-md uppercase"
                             placeholder="Ex: PB"
+                            disabled={isLoading}
                         />
                     </div>
 
                     <div className="sm:col-span-1">
-                        <label className="text-sm font-medium text-gray-700">Telefone</label>
+                        <label className="text-sm font-medium text-gray-700">Telefone (Opcional)</label>
                         <input
                             type="tel"
                             name="telefone"
                             value={formData.telefone}
                             onChange={handleChange}
-                            required
                             placeholder="Ex: (83) 99999-9999"
                             className="w-full p-3 mt-1 border rounded-md"
+                            disabled={isLoading}
                         />
                     </div>
                 </div>
 
                 <button
                     type="submit"
-                    className="
+                    className={`
                         w-full py-3 mt-8
-                        bg-blue-600 hover:bg-blue-700
                         text-white text-base font-semibold rounded-lg
                         transition
-                    "
+                        ${isLoading 
+                            ? 'bg-gray-400 cursor-not-allowed' 
+                            : 'bg-blue-600 hover:bg-blue-700'
+                        }
+                    `}
+                    disabled={isLoading} // <-- 8. Desabilitar botão durante o envio
                 >
-                    Cadastrar UBS
+                    {isLoading ? 'Cadastrando...' : 'Cadastrar UBS'}
                 </button>
             </form>
         </div>

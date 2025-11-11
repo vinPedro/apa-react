@@ -8,64 +8,113 @@ import DivFormulario from "@/components/DivFormulario";
 import Formulario from "@/components/Formulario";
 import Link from "next/link";
 import { useState } from "react"; 
+import { useRouter } from "next/navigation"; // Importar o router para redirecionar
+
+// --- Mapeamento dos ENUMS do Backend ---
+const sexoOptions = [
+    { id: "FEMININO", nome: "Feminino" },
+    { id: "MASCULINO", nome: "Masculino" },
+    { id: "INDETERMINADO", nome: "Indeterminado / Não declarar" },
+];
+
+const racaOptions = [
+    { id: "BRANCA", nome: "Branca" },
+    { id: "PRETA", nome: "Preta" },
+    { id: "PARDA", nome: "Parda" },
+    { id: "AMARELA", nome: "Amarela" },
+    { id: "INDIGENA", nome: "Indígena" },
+    { id: "NAO_DECLARADA", nome: "Não Declarada" },
+];
+// --- Fim do Mapeamento ---
+
 
 export default function TelaCadastro() {
     
-    // estado para os erros de validação
+    const router = useRouter(); // Para redirecionar após o sucesso
     const [errors, setErrors] = useState({});
+    const [apiError, setApiError] = useState(null); // Erro vindo da API
+    const [isLoading, setIsLoading] = useState(false);
 
-    // função de validação
+    // DTO do Backend:
+    const initialValues = {
+        nomeCompleto: "",
+        cns: "",
+        cpf: "",
+        dataNascimento: "",
+        sexo: "", // Vai guardar o ID (ex: "FEMININO")
+        racacor: "", // Vai guardar o ID (ex: "BRANCA")
+        unidadeSaudeId: "", // ID da UBS
+        logradouro: "",
+        bairro: "",
+        municipio: "",
+        uf: "",
+        telefone: "",
+        email: "",
+        senha: "",
+    };
+
+    // Função de validação (simplificada)
     const validate = (formData) => {
         const newErrors = {};
-
-        if (!formData.nome) {
-            newErrors.nome = "Nome é obrigatório.";
-        }
-        if (!formData.cns) {
-            newErrors.cns = "CNS é obrigatório.";
-        }
-        if (!formData.cpf) {
-            newErrors.cpf = "CPF é obrigatório.";
-        }
-        if (!formData.nasc) {
-            newErrors.nasc = "Data de Nascimento é obrigatória.";
-        }
-        if (!formData.sexo) {
-            newErrors.sexo = "Sexo é obrigatória.";
-        }
-        if (!formData.ubs) {
-            newErrors.ubs = "UBS é obrigatória.";
-        }
-        if (!formData.sus) {
-            newErrors.sus = "SUS é obrigatório.";
-        }
-        if (!formData.raca) {
-            newErrors.raca = "Raça/Cor é obrigatório.";
-        }
-        if (!formData.end) {
-            newErrors.end = "Endereço é obrigatório.";
-        }
-        if (!formData.tel) {
-            newErrors.tel = "Telefone é obrigatório.";
-        }
-         if (!formData.email) {
-            newErrors.email = "E-mail é obrigatório.";
-        }
-        if (!formData.senha) {
-            newErrors.senha = "Senha é obrigatória.";
-        }
+        if (!formData.nomeCompleto) newErrors.nomeCompleto = "Nome é obrigatório.";
+        if (!formData.cns) newErrors.cns = "CNS é obrigatório.";
+        if (!formData.cpf) newErrors.cpf = "CPF é obrigatório.";
+        if (!formData.dataNascimento) newErrors.dataNascimento = "Data de Nascimento é obrigatória.";
+        if (!formData.sexo) newErrors.sexo = "Sexo é obrigatório.";
+        if (!formData.racacor) newErrors.racacor = "Raça/Cor é obrigatório.";
+        if (!formData.unidadeSaudeId) newErrors.unidadeSaudeId = "ID da UBS é obrigatório.";
+        if (!formData.logradouro) newErrors.logradouro = "Logradouro é obrigatório.";
+        if (!formData.bairro) newErrors.bairro = "Bairro é obrigatório.";
+        if (!formData.municipio) newErrors.municipio = "Município é obrigatório.";
+        if (!formData.uf) newErrors.uf = "UF é obrigatório.";
+        if (!formData.email) newErrors.email = "E-mail é obrigatório.";
+        if (!formData.senha) newErrors.senha = "Senha é obrigatória.";
         
         return newErrors;
     };
 
-    // 4. Criar um 'handleSubmit' que usa a validação
-    const handleSubmit = (data) => {
+    const handleSubmit = async (data) => {
         const validationErrors = validate(data);
-        setErrors(validationErrors); // Define os erros (se houver)
+        setErrors(validationErrors); 
+        setApiError(null);
 
-        // Se o objeto de erros estiver vazio, envia os dados
-        if (Object.keys(validationErrors).length === 0) {
-            console.log(data); // Ação de submit original
+        if (Object.keys(validationErrors).length > 0) {
+            return; // Para se houver erros de formulário
+        }
+
+        setIsLoading(true);
+
+        try {
+            // O PacienteService espera um Long no ID da UBS e no Telefone
+            //
+            // Nota: O DTO PacienteRequestDTO tem telefone como String, mas a entidade Paciente tem como int. 
+            // Vamos enviar como String, a API deve tratar. Vamos converter só o ID da UBS.
+            const dataToSubmit = {
+                ...data,
+                unidadeSaudeId: parseInt(data.unidadeSaudeId, 10),
+            };
+
+            const response = await fetch("http://localhost:8080/api/pacientes", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(dataToSubmit),
+            });
+
+            if (!response.ok) {
+                const erroData = await response.json();
+                // Ex: "Email já cadastrado para outro usuário."
+                throw new Error(erroData.message || `Erro ${response.status}`);
+            }
+
+            // Sucesso!
+            alert("Cadastro realizado com sucesso! Você será redirecionado para o login.");
+            router.push("/"); // Redireciona para a home (login)
+
+        } catch (err) {
+            console.error("Erro no cadastro:", err);
+            setApiError(err.message);
+        } finally {
+            setIsLoading(false);
         }
     };
     
@@ -73,125 +122,173 @@ export default function TelaCadastro() {
         <div className="flex justify-center items-center min-h-screen w-full p-4">
             <DivFormulario maxWidth={700} minWidth={350}>
                 <Formulario
-                    initialValues={{ nome: "", cns: "", cpf: "", nasc: "", sexo:  "", ubs: "", sus: "", raca: "", end: "", tel: "", email: "", senha: "" }}
-                    onSubmit={handleSubmit} //  Usar o novo handleSubmit
+                    initialValues={initialValues}
+                    onSubmit={handleSubmit}
                     titulo="Cadastro do Paciente:"
                 >
                     {({ formData, handleChange, handleSelectChange }) => (
                         <>
+                            {apiError && (
+                                <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded text-center">
+                                    <strong>Falha no cadastro:</strong> {apiError}
+                                </div>
+                            )}
+
                             <Campo 
-                                label="Nome:"
+                                label="Nome Completo:"
                                 placeholder="Nome Completo"
-                                name="nome"
-                                value={formData.nome}
+                                name="nomeCompleto" // MUDOU
+                                value={formData.nomeCompleto}
                                 type="text"
                                 onChange={handleChange}
-                                error={errors.nome} //  Passar o erro para o Campo
+                                error={errors.nomeCompleto}
+                                disabled={isLoading}
                             />
 
                             <Campo 
                                 label="CNS:"
-                                placeholder="Cartao nacional de saude"
+                                placeholder="Cartão nacional de saúde (só números)"
                                 name="cns"
                                 value={formData.cns}
                                 type="number"
                                 onChange={handleChange}
                                 error={errors.cns}
+                                disabled={isLoading}
                             />
 
                             <Campo 
                                 label="CPF:"
-                                placeholder="00000000000"
+                                placeholder="CPF (só números)"
                                 name="cpf"
                                 value={formData.cpf}
                                 type="number"
                                 onChange={handleChange}
-                                error={errors.cpf} //  Passar o erro
+                                error={errors.cpf}
+                                disabled={isLoading}
                             />
 
                             <Campo 
                                 label="Data de Nascimento:"
-                                name="nasc"
-                                value={formData.nasc}
+                                name="dataNascimento" // MUDOU
+                                value={formData.dataNascimento}
                                 type="date"
                                 onChange={handleChange}
-                                error={errors.nasc} //  Passar o erro
+                                error={errors.dataNascimento}
+                                disabled={isLoading}
                             />
 
                             <ComboBox
                                 label="Sexo:"
                                 name="sexo"
-                                options={["Feminino", "Masculino", "Prefiro não dizer"]}
-                                value={formData.sexo}
-                                onChange={handleSelectChange}
+                                // Mapeia o array de objetos para o ComboBox
+                                options={sexoOptions.map(opt => opt.nome)}
+                                value={sexoOptions.find(opt => opt.id === formData.sexo)?.nome || ""}
+                                // Ao mudar, salva o ID ("FEMININO", "MASCULINO"...)
+                                onChange={(name, value) => {
+                                    const selectedId = sexoOptions.find(opt => opt.nome === value)?.id;
+                                    handleSelectChange(name, selectedId);
+                                }}
                                 error={errors.sexo}
-                            />
-
-                            <ComboBox
-                                label="UBS:"
-                                name="ubs"
-                                options={["UBS1", "UBS2", "UBS3"]}
-                                value={formData.ubs}
-                                onChange={handleSelectChange}
-                                error={errors.ubs}
-                            />
-
-                            <Campo 
-                                label="SUS:"
-                                placeholder="Número do SUS: 0000000000"
-                                name="sus"
-                                value={formData.sus}
-                                type="number"
-                                onChange={handleChange}
-                                error={errors.sus} //  Passar o erro
+                                disabled={isLoading}
                             />
 
                             <ComboBox
                                 label="Raça/Cor:"
-                                name="raca"
-                                options={["Branco", "Pardo", "Preto"]}
-                                value={formData.raca}
-                                onChange={handleSelectChange}
-                                error={errors.raca}
+                                name="racacor" // MUDOU
+                                options={racaOptions.map(opt => opt.nome)}
+                                value={racaOptions.find(opt => opt.id === formData.racacor)?.nome || ""}
+                                onChange={(name, value) => {
+                                    const selectedId = racaOptions.find(opt => opt.nome === value)?.id;
+                                    handleSelectChange(name, selectedId);
+                                }}
+                                error={errors.racacor}
+                                disabled={isLoading}
+                            />
+
+                            {/* --- CAMPOS DE ENDEREÇO SEPARADOS --- */}
+                            <Campo 
+                                label="ID da UBS (Unidade de Saúde):"
+                                placeholder="Digite o ID da sua UBS (Ex: 1)"
+                                name="unidadeSaudeId" // MUDOU
+                                value={formData.unidadeSaudeId}
+                                type="number"
+                                onChange={handleChange}
+                                error={errors.unidadeSaudeId}
+                                disabled={isLoading}
                             />
 
                             <Campo 
-                                label="Endereço:"
-                                placeholder="Rua/Bairro/N°"
-                                name="end"
-                                value={formData.end}
+                                label="Logradouro (Rua, Av, etc):"
+                                placeholder="Ex: Rua Principal, 123"
+                                name="logradouro" // MUDOU
+                                value={formData.logradouro}
                                 onChange={handleChange}
-                                error={errors.end}
+                                error={errors.logradouro}
+                                disabled={isLoading}
                             />
+
+                            <Campo 
+                                label="Bairro:"
+                                placeholder="Ex: Centro"
+                                name="bairro" // MUDOU
+                                value={formData.bairro}
+                                onChange={handleChange}
+                                error={errors.bairro}
+                                disabled={isLoading}
+                            />
+                            <Campo 
+                                label="Município:"
+                                placeholder="Ex: João Pessoa"
+                                name="municipio" // MUDOU
+                                value={formData.municipio}
+                                onChange={handleChange}
+                                error={errors.municipio}
+                                disabled={isLoading}
+                            />
+                            <Campo 
+                                label="UF (Sigla):"
+                                placeholder="Ex: PB"
+                                name="uf" // MUDOU
+                                value={formData.uf}
+                                maxLength={2}
+                                onChange={handleChange}
+                                error={errors.uf}
+                                disabled={isLoading}
+                            />
+                            {/* --- FIM DOS CAMPOS DE ENDEREÇO --- */}
+
 
                             <Campo 
                                 label="Telefone:"
-                                placeholder="Número com DDD sem espaço ou traço: 00000000000"
-                                name="tel"
-                                value={formData.tel}
+                                placeholder="Número com DDD (só números)"
+                                name="telefone"
+                                value={formData.telefone}
                                 type="number"
                                 onChange={handleChange}
-                                error={errors.tel}
+                                error={errors.telefone}
+                                disabled={isLoading}
                             />
 
                             <Campo 
-                                label="E-mail:"
+                                label="E-mail (Será seu login):"
                                 placeholder="email@gmail.com"
                                 name="email"
                                 value={formData.email}
                                 type="email"
                                 onChange={handleChange}
                                 error={errors.email}
+                                disabled={isLoading}
                             />
 
                             <Campo 
                                 label="Senha:"
-                                placeholder="Senha"
+                                placeholder="Senha (mínimo 8 caracteres)"
                                 name="senha"
                                 value={formData.senha}
                                 type="password"
                                 onChange={handleChange}
-                                error={errors.senha} //  Passar o erro
+                                error={errors.senha}
+                                disabled={isLoading}
                             />
 
                             <DivBotoes>
@@ -201,13 +298,16 @@ export default function TelaCadastro() {
                                         color="var(--color-text-botao-secundaria)"
                                         maximo={170}
                                         type="button"
+                                        disabled={isLoading}
                                     >
                                         Cancelar
                                     </Botao>
                                 </Link>
 
                                 <div className="w-full max-w-[170px]">
-                                    <Botao type="submit">Salvar</Botao>
+                                    <Botao type="submit" disabled={isLoading}>
+                                        {isLoading ? "Salvando..." : "Salvar"}
+                                    </Botao>
                                 </div>
                             </DivBotoes>
                         </>

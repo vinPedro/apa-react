@@ -2,8 +2,24 @@
 
 import { createContext, useContext, useState } from "react";
 import { useRouter } from "next/navigation";
+import { jwtDecode } from "jwt-decode"; // <-- 1. Importa a biblioteca
 
 const AuthContext = createContext(null);
+
+// Função para mapear as roles do Backend para os perfis do Frontend
+const mapBackendRoleToProfile = (backendRole) => {
+  switch (backendRole) {
+    case "ROLE_ADMIN":
+      return "admin";
+    case "ROLE_PACIENTE":
+      return "Paciente";
+    case "ROLE_PROFISSIONAL":
+      // No seu Sidebar, o perfil é "ProfissionaldeSaude"
+      return "ProfissionaldeSaude"; 
+    default:
+      return null;
+  }
+};
 
 export function AuthProvider({ children }) {
   const router = useRouter();
@@ -13,7 +29,8 @@ export function AuthProvider({ children }) {
 
   const login = async (login, senha) => {
     try {
-      const response = await fetch("http://localhost:8080/login", {
+      // <-- 2. URL correta da API de login
+      const response = await fetch("http://localhost:8080/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ login, senha }),
@@ -24,17 +41,32 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      const data = await response.json();
-      setToken(data.token);
-      setProfile(data.profile);
+      // API retorna { token: "..." }
+      const data = await response.json(); 
 
-     
-      if (data.profile === "admin") router.push("/admin");
-      if (data.profile === "Paciente") router.push("/Paciente");
-      if (data.profile === "ProfissionaldeSaude") router.push("/ProfissionaldeSaude");
+      // <-- 3. Decodifica o token
+      const decodedToken = jwtDecode(data.token);
+      
+      // <-- 4. Pega a "role" de dentro do token
+      const userProfile = mapBackendRoleToProfile(decodedToken.role); 
+      
+      if (!userProfile) {
+        alert("Perfil de usuário não reconhecido.");
+        return;
+      }
+
+      // <-- 5. Salva o token e o perfil extraído
+      setToken(data.token);
+      setProfile(userProfile);
+
+      // <-- 6. Redireciona com base no perfil
+      if (userProfile === "admin") router.push("/admin");
+      if (userProfile === "Paciente") router.push("/Paciente");
+      if (userProfile === "ProfissionaldeSaude") router.push("/ProfissionaldeSaude");
 
     } catch (error) {
       console.error("Erro no login:", error);
+      alert("Erro ao tentar fazer login. Verifique o console.");
     }
   };
 

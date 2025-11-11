@@ -1,5 +1,7 @@
 import "./globals.css";
 import { AuthProvider } from "../AuthContext";
+// 1. Importe o ClientLayoutWrapper
+import ClientLayoutWrapper from "@/components/Layout/ClientLayoutWrapper";
 
 export const metadata = {
   title: "Assistente de Pronto Atendimento",
@@ -11,9 +13,16 @@ export default function RootLayout({ children }) {
     <html lang="pt-br">
       <body>
         <AuthProvider>
-          <div className="flex justify-center items-center min-h-screen p-2">
+          {/*
+            2. Substitua o <div> simples pelo Wrapper.
+            Agora, o ClientLayoutWrapper vai decidir se mostra
+            só os {children} (se deslogado) ou o
+            <DashboardLayout>{children}</DashboardLayout> (se logado).
+          */}
+          <ClientLayoutWrapper>
             {children}
-          </div>
+          </ClientLayoutWrapper>
+          
         </AuthProvider>
       </body>
     </html>
