@@ -24,6 +24,10 @@ function Sidebar() {
                   <NavItem to="/admin" label="Painel Admin" />
                   <NavItem to="/Instituicoes/ubs" label="Cadastrar Posto de Saúde (PSF)" />
                   <NavItem to="/CadastroProfissional" label="Cadastro de Profissional de Saúde" />
+                  <NavItem to="/PesquisaPaciente" label="Encontrar Pacientes" />
+                  <NavItem to="/PesquisaProfissional" label="Encontrar Profissionais de Saúde" />
+
+
                 </>
               )}
               
@@ -32,6 +36,7 @@ function Sidebar() {
                   <NavItem to="/ProfissionalDeSaude" label="Painel do Profissional" />
                   <NavItem to="/CadastrarPacientes" label="Cadastrar Pacientes" />
                   <NavItem to="/FichasAtivas" label="Visualizar Fichas Ativas" />
+                  <NavItem to="/PesquisaPaciente" label="Encontrar Pacientes" />
                   <NavItem to="/VisualizarProntuarios" label="Visualizar Prontuários" />
                 </>
               )}
