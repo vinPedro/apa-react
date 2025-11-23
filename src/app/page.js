@@ -94,6 +94,7 @@ export default function HomePage() {
                   background="var(--color-botao-terceira)"
                   color="var(--color-text-botao-secundaria)"
                   disabled={isLoading} // Desabilitar botão
+                  type="button"
                 >
                   Cadastrar-se
                 </Botao>
@@ -102,7 +103,7 @@ export default function HomePage() {
           )}
         </Formulario>
 
-        <Link href="/senha" className="text-center text-primaria">
+        <Link href="/paciente/fila" className="text-center text-primaria">
           Esqueci minha senha
         </Link>
       </DivFormulario>
