@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DivFormulario from "@/components/DivFormulario";
 import Formulario from "@/components/Formulario";
 import ComboBox from "@/components/ComboBox";
 import Botao from "@/components/Botao";
 import { ToggleSwitch } from "@/components/ToggleSwitch";
 import DivBotoes from "@/components/DivBotoes";
-
-import { useAuth } from "@/AuthContext";
-import { useEffect } from "react";
+import AlertMessage from "@/components/AlertMessage";
+import { useAuth} from "@/AuthContext";
 import { useRouter } from "next/navigation";
 
 //tem que mudar para receber da API
@@ -22,13 +21,14 @@ const instOptions = [
 export default function CadastroPacienteFila() {
 
     const { isAuthenticated, profile } = useAuth();
-      const router = useRouter();
-    
-      useEffect(() => {
+    const [ mensagem, setMensagem ] = useState(null);
+    const router = useRouter();
+
+    /*useEffect(() => {
         if (!isAuthenticated || profile !== "Paciente") {
-          router.push("/");
+            router.push("/");
         }
-      }, [isAuthenticated, profile]);
+    }, [isAuthenticated, profile]);*/
 
     const [errors, setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
@@ -50,6 +50,15 @@ export default function CadastroPacienteFila() {
 
     return (
         <div className=" flex justify-center p-4">
+
+            {mensagem && (
+                <AlertMessage
+                    message={mensagem.mensagem}
+                    variant={mensagem.variante}
+                    onClose={() => setMensagem(null)}
+                />
+            )}
+
             <DivFormulario>
                 <Formulario
                     initialValues={{ unidadeSaudeId: "", prioridade: false }}
@@ -62,12 +71,12 @@ export default function CadastroPacienteFila() {
                             <ComboBox
                                 label="Unidade de Saúde (UBS):"
                                 name="unidadeSaudeId" // MUDOU
-                                options={instOptions.map(opt => opt.nome)}
-                                value={instOptions.find(opt => opt.id === formData.unidadeSaudeId)?.nome || ""}
-                                onChange={(name, value) => {
-                                    const selectedId = instOptions.find(opt => opt.nome === value)?.id;
-                                    handleSelectChange(name, selectedId);
-                                }}
+                                options={instOptions.map(op => ({
+                                    value: op.id,
+                                    text: op.nome
+                                }))}
+                                value={formData.unidadeSaudeId}
+                                onChange={(v) => handleSelectChange("unidadeSaudeId", v)}
                                 error={errors.unidadeSaudeId}
                                 disabled={isLoading}
                             />
@@ -75,7 +84,7 @@ export default function CadastroPacienteFila() {
                             <ToggleSwitch label="Prioritario:" onChange={(valor) => handleSelectChange("prioridade", valor)} checked={formData.prioridade} />
 
                             <DivBotoes>
-                                <Botao>
+                                <Botao type="button" onClick={() => setMensagem({ mensagem: "Teste", variante: "success"/*erro pode ser colocado*/ })}>
                                     Gerar Senha
                                 </Botao>
                             </DivBotoes>
