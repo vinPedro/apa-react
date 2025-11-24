@@ -7,8 +7,8 @@ import DivBotoes from "@/components/DivBotoes";
 import DivFormulario from "@/components/DivFormulario";
 import Formulario from "@/components/Formulario";
 import Link from "next/link";
-import { useState } from "react"; 
-import { useRouter } from "next/navigation"; 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 // --- Mapeamento dos ENUMS do Backend ---
 const sexoOptions = [
@@ -29,7 +29,7 @@ const racaOptions = [
 
 
 export default function TelaCadastro() {
-    
+
     const router = useRouter(); // Para redirecionar após o sucesso
     const [errors, setErrors] = useState({});
     const [apiError, setApiError] = useState(null); // Erro vindo da API
@@ -69,13 +69,13 @@ export default function TelaCadastro() {
         if (!formData.uf) newErrors.uf = "UF é obrigatório.";
         if (!formData.email) newErrors.email = "E-mail é obrigatório.";
         if (!formData.senha) newErrors.senha = "Senha é obrigatória.";
-        
+
         return newErrors;
     };
 
     const handleSubmit = async (data) => {
         const validationErrors = validate(data);
-        setErrors(validationErrors); 
+        setErrors(validationErrors);
         setApiError(null);
 
         if (Object.keys(validationErrors).length > 0) {
@@ -85,7 +85,7 @@ export default function TelaCadastro() {
         setIsLoading(true);
 
         try {
-            
+
             const dataToSubmit = {
                 ...data,
                 unidadeSaudeId: parseInt(data.unidadeSaudeId, 10),
@@ -99,7 +99,7 @@ export default function TelaCadastro() {
 
             if (!response.ok) {
                 const erroData = await response.json();
-                
+
                 throw new Error(erroData.message || `Erro ${response.status}`);
             }
 
@@ -114,7 +114,7 @@ export default function TelaCadastro() {
             setIsLoading(false);
         }
     };
-    
+
     return (
         <div className="flex justify-center items-center min-h-screen w-full p-4">
             <DivFormulario maxWidth={700} minWidth={350}>
@@ -131,7 +131,7 @@ export default function TelaCadastro() {
                                 </div>
                             )}
 
-                            <Campo 
+                            <Campo
                                 label="Nome Completo:"
                                 placeholder="Nome Completo"
                                 name="nomeCompleto" // MUDOU
@@ -142,7 +142,7 @@ export default function TelaCadastro() {
                                 disabled={isLoading}
                             />
 
-                            <Campo 
+                            <Campo
                                 label="CNS:"
                                 placeholder="Cartão nacional de saúde (só números)"
                                 name="cns"
@@ -153,7 +153,7 @@ export default function TelaCadastro() {
                                 disabled={isLoading}
                             />
 
-                            <Campo 
+                            <Campo
                                 label="CPF:"
                                 placeholder="CPF (só números)"
                                 name="cpf"
@@ -164,7 +164,7 @@ export default function TelaCadastro() {
                                 disabled={isLoading}
                             />
 
-                            <Campo 
+                            <Campo
                                 label="Data de Nascimento:"
                                 name="dataNascimento" // MUDOU
                                 value={formData.dataNascimento}
@@ -178,13 +178,13 @@ export default function TelaCadastro() {
                                 label="Sexo:"
                                 name="sexo"
                                 // Mapeia o array de objetos para o ComboBox
-                                options={sexoOptions.map(opt => opt.nome)}
-                                value={sexoOptions.find(opt => opt.id === formData.sexo)?.nome || ""}
+                                options={sexoOptions.map(op => ({
+                                    value: op.id,
+                                    text: op.nome
+                                }))}
+                                value={formData.sexo}
                                 // Ao mudar, salva o ID ("FEMININO", "MASCULINO"...)
-                                onChange={(name, value) => {
-                                    const selectedId = sexoOptions.find(opt => opt.nome === value)?.id;
-                                    handleSelectChange(name, selectedId);
-                                }}
+                                onChange={(v) => handleSelectChange("sexo", v)}
                                 error={errors.sexo}
                                 disabled={isLoading}
                             />
@@ -192,18 +192,18 @@ export default function TelaCadastro() {
                             <ComboBox
                                 label="Raça/Cor:"
                                 name="racacor" // MUDOU
-                                options={racaOptions.map(opt => opt.nome)}
-                                value={racaOptions.find(opt => opt.id === formData.racacor)?.nome || ""}
-                                onChange={(name, value) => {
-                                    const selectedId = racaOptions.find(opt => opt.nome === value)?.id;
-                                    handleSelectChange(name, selectedId);
-                                }}
+                                options={racaOptions.map(op =>({
+                                    value: op.id,
+                                    text: op.nome
+                                }))}
+                                value={formData.racacor}
+                                onChange={(v) => handleSelectChange("racacor", v)}
                                 error={errors.racacor}
                                 disabled={isLoading}
                             />
 
                             {/* --- CAMPOS DE ENDEREÇO SEPARADOS --- */}
-                            <Campo 
+                            <Campo
                                 label="ID da UBS (Unidade de Saúde):"
                                 placeholder="Digite o ID da sua UBS (Ex: 1)"
                                 name="unidadeSaudeId" // MUDOU
@@ -214,7 +214,7 @@ export default function TelaCadastro() {
                                 disabled={isLoading}
                             />
 
-                            <Campo 
+                            <Campo
                                 label="Logradouro (Rua, Av, etc):"
                                 placeholder="Ex: Rua Principal, 123"
                                 name="logradouro" // MUDOU
@@ -224,7 +224,7 @@ export default function TelaCadastro() {
                                 disabled={isLoading}
                             />
 
-                            <Campo 
+                            <Campo
                                 label="Bairro:"
                                 placeholder="Ex: Centro"
                                 name="bairro" // MUDOU
@@ -233,7 +233,7 @@ export default function TelaCadastro() {
                                 error={errors.bairro}
                                 disabled={isLoading}
                             />
-                            <Campo 
+                            <Campo
                                 label="Município:"
                                 placeholder="Ex: João Pessoa"
                                 name="municipio" // MUDOU
@@ -242,7 +242,7 @@ export default function TelaCadastro() {
                                 error={errors.municipio}
                                 disabled={isLoading}
                             />
-                            <Campo 
+                            <Campo
                                 label="UF (Sigla):"
                                 placeholder="Ex: PB"
                                 name="uf" // MUDOU
@@ -255,7 +255,7 @@ export default function TelaCadastro() {
                             {/* --- FIM DOS CAMPOS DE ENDEREÇO --- */}
 
 
-                            <Campo 
+                            <Campo
                                 label="Telefone:"
                                 placeholder="Número com DDD (só números)"
                                 name="telefone"
@@ -266,7 +266,7 @@ export default function TelaCadastro() {
                                 disabled={isLoading}
                             />
 
-                            <Campo 
+                            <Campo
                                 label="E-mail (Será seu login):"
                                 placeholder="email@gmail.com"
                                 name="email"
@@ -277,7 +277,7 @@ export default function TelaCadastro() {
                                 disabled={isLoading}
                             />
 
-                            <Campo 
+                            <Campo
                                 label="Senha:"
                                 placeholder="Senha (mínimo 8 caracteres)"
                                 name="senha"
