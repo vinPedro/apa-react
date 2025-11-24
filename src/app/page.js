@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-// Ajuste o caminho se necessário:
+
 import { useAuth } from "../AuthContext";
 import Botao from "@/components/Botao";
 import Campo from "@/components/Campo";
@@ -9,7 +9,7 @@ import DivFormulario from "@/components/DivFormulario";
 import Formulario from "@/components/Formulario";
 import Link from "next/link";
 
-// Importação do formulário de Setup
+
 import PrimeiroAdminForm from '../components/forms/PrimeiroAdminForm.jsx';
 
 
@@ -18,12 +18,11 @@ import PrimeiroAdminForm from '../components/forms/PrimeiroAdminForm.jsx';
 // ----------------------------------------------------
 const checkAdminStatus = async () => {
     try {
-        // 🚀 SOLUÇÃO DE CACHE-BUSTING: Adicionar timestamp
+        
         const timestamp = Date.now();
         const url = `/api/setup/status?t=${timestamp}`;
 
-        // Mesmo sendo um Client Component, é bom manter 'no-store' por segurança,
-        // mas o timestamp é o que realmente forçará o refetch no navegador.
+       
         const response = await fetch(url, {
             cache: 'no-store', 
         });
@@ -52,7 +51,7 @@ export default function HomePage() {
     useEffect(() => {
         const initializePage = async () => {
             const isInitialized = await checkAdminStatus();
-            // Se isInitialized for TRUE, needsSetup deve ser FALSE (Vai para Login Diário).
+            
             setNeedsSetup(!isInitialized);
             setVerifying(false);
         };
@@ -60,8 +59,7 @@ export default function HomePage() {
     }, []);
 
     const handleSetupSuccess = async () => {
-        // Após o cadastro bem-sucedido, re-verifica o status (para needsSetup = false)
-        // Esta nova chamada usará o cache: 'no-store' e obterá o novo estado (true) do backend.
+      
         setVerifying(true);
         const isInitialized = await checkAdminStatus();
         setNeedsSetup(!isInitialized);
@@ -101,7 +99,7 @@ export default function HomePage() {
 
     // --- RENDERIZAÇÃO CONDICIONAL ---
 
-    // 1. Estado de Carregamento
+    
     if (verifying) {
         return (
             <div className="flex justify-center items-center min-h-screen w-full p-4">
@@ -110,17 +108,16 @@ export default function HomePage() {
         );
     }
 
-    // 2. Se PRECISA de Setup (Sistema NÃO inicializado)
     if (needsSetup) {
         return (
             <div className="flex justify-center items-center min-h-screen w-full p-4">
-                {/* RENDERIZA O FORMULÁRIO DE CADASTRO DO PRIMEIRO ADMIN */}
+                
                 <PrimeiroAdminForm onCadastroSucesso={handleSetupSuccess} />
             </div>
         );
     }
 
-    // 3. Se JÁ TEM admin (Sistema inicializado) - Login Diário
+   
     return (
         <div className="flex justify-center items-center min-h-screen w-full p-4">
             <DivFormulario>
