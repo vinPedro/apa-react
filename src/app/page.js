@@ -1,112 +1,187 @@
 "use client";
 
+import React, { useState, useEffect } from 'react';
+// Ajuste o caminho se necessário:
 import { useAuth } from "../AuthContext";
 import Botao from "@/components/Botao";
 import Campo from "@/components/Campo";
 import DivFormulario from "@/components/DivFormulario";
 import Formulario from "@/components/Formulario";
 import Link from "next/link";
-import { useState } from "react"; 
 
-export default function HomePage() {
-  const { login } = useAuth();
-  
-  const [errors, setErrors] = useState({});
-  
-  const [apiError, setApiError] = useState(null); // Para erros do backend
-  const [isLoading, setIsLoading] = useState(false);
+// Importação do formulário de Setup
+import PrimeiroAdminForm from '../components/forms/PrimeiroAdminForm.jsx';
 
-  const validate = (formData) => {
-    // ... (sua validação local continua igual)
-    const newErrors = {};
-    if (!formData.login) newErrors.login = "CPF/Identificador é obrigatório.";
-    if (!formData.senha) newErrors.senha = "Senha é obrigatória.";
-    return newErrors;
-  };
 
-  const handleSubmit = async (data) => {
-    const validationErrors = validate(data);
-    setErrors(validationErrors); 
-    setApiError(null); // Limpa erros antigos da API
+// ----------------------------------------------------
+// FUNÇÃO DE VERIFICAÇÃO DE STATUS
+// ----------------------------------------------------
+const checkAdminStatus = async () => {
+    try {
+        // 🚀 SOLUÇÃO DE CACHE-BUSTING: Adicionar timestamp
+        const timestamp = Date.now();
+        const url = `/api/setup/status?t=${timestamp}`;
 
-    if (Object.keys(validationErrors).length === 0) {
-      setIsLoading(true);
-      try {
-        // Tenta fazer o login
-        await login(data.login, data.senha);
-        // Se deu certo, o AuthContext vai redirecionar
-      } catch (error) {
-        // Se deu errado, captura o erro que o AuthContext lançou
-        setApiError(error.message); 
-      } finally {
-        setIsLoading(false);
-      }
+        // Mesmo sendo um Client Component, é bom manter 'no-store' por segurança,
+        // mas o timestamp é o que realmente forçará o refetch no navegador.
+        const response = await fetch(url, {
+            cache: 'no-store', 
+        });
+
+        if (!response.ok) throw new Error('Falha na conexão com a API de status.');
+
+        const data = await response.json();
+        return data.adminExists;
+
+    } catch (error) {
+        console.error("Erro ao verificar status de admin:", error);
+        return false;
     }
-  };
+};
+// ----------------------------------------------------
+// COMPONENTE PRINCIPAL (HomePage/Login)
+// ----------------------------------------------------
+export default function HomePage() {
+    const { login } = useAuth();
 
-  return (
-    <div className="flex justify-center items-center min-h-screen w-full p-4">
-      <DivFormulario>
-        <Formulario
-          initialValues={{ senha: "", login: "" }}
-          titulo="Assistente de Pronto Atendimento"
-          onSubmit={handleSubmit}
-        >
-          {({ formData, handleChange }) => (
-            <>
-              {/* --- 3. ADICIONE O BLOCO DE ERRO DA API --- */}
-              {apiError && (
-                <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded text-center">
-                  <strong>Falha no login:</strong> {apiError}
-                </div>
-              )}
-              {/* --- FIM DO BLOCO DE ERRO --- */}
+    // --- ESTADOS DO SETUP ---
+    const [needsSetup, setNeedsSetup] = useState(false);
+    const [verifying, setVerifying] = useState(true);
 
-              <Campo
-                label="CPF/Identificador:"
-                placeholder="CPF/Identificador"
-                name="login"
-                value={formData.login || ""}
-                type="text"
-                onChange={handleChange}
-                error={errors.login}
-                disabled={isLoading} // Desabilitar campo
-              />
+    // --- LÓGICA DO SETUP ---
+    useEffect(() => {
+        const initializePage = async () => {
+            const isInitialized = await checkAdminStatus();
+            // Se isInitialized for TRUE, needsSetup deve ser FALSE (Vai para Login Diário).
+            setNeedsSetup(!isInitialized);
+            setVerifying(false);
+        };
+        initializePage();
+    }, []);
 
-              <Campo
-                label="Senha:"
-                placeholder="senha"
-                name="senha"
-                value={formData.senha || ""}
-                type="password"
-                onChange={handleChange}
-                error={errors.senha}
-                disabled={isLoading} // Desabilitar campo
-              />
+    const handleSetupSuccess = async () => {
+        // Após o cadastro bem-sucedido, re-verifica o status (para needsSetup = false)
+        // Esta nova chamada usará o cache: 'no-store' e obterá o novo estado (true) do backend.
+        setVerifying(true);
+        const isInitialized = await checkAdminStatus();
+        setNeedsSetup(!isInitialized);
+        setVerifying(false);
+        console.log("Administrador principal cadastrado com sucesso! Prossiga com o login.");
+    };
+    // ------------------------------------
 
-              <Botao maximo={700} disabled={isLoading}>
-                {isLoading ? "Entrando..." : "Entrar"}
-              </Botao>
+    // --- ESTADOS E FUNÇÕES DO LOGIN DIÁRIO (USUÁRIO) ---
+    const [errors, setErrors] = useState({});
+    const [apiError, setApiError] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
 
-              <Link href="/cadastro">
-                <Botao
-                  maximo={700}
-                  background="var(--color-botao-terceira)"
-                  color="var(--color-text-botao-secundaria)"
-                  disabled={isLoading} // Desabilitar botão
-                  type="button"
+    const validate = (formData) => {
+        const newErrors = {};
+        if (!formData.login) newErrors.login = "CPF/Identificador é obrigatório.";
+        if (!formData.senha) newErrors.senha = "Senha é obrigatória.";
+        return newErrors;
+    };
+
+    const handleSubmit = async (data) => {
+        const validationErrors = validate(data);
+        setErrors(validationErrors);
+        setApiError(null);
+
+        if (Object.keys(validationErrors).length === 0) {
+            setIsLoading(true);
+            try {
+                await login(data.login, data.senha);
+            } catch (error) {
+                setApiError(error.message);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+    };
+
+    // --- RENDERIZAÇÃO CONDICIONAL ---
+
+    // 1. Estado de Carregamento
+    if (verifying) {
+        return (
+            <div className="flex justify-center items-center min-h-screen w-full p-4">
+                <p className="text-xl text-blue-500">Verificando status inicial do sistema...</p>
+            </div>
+        );
+    }
+
+    // 2. Se PRECISA de Setup (Sistema NÃO inicializado)
+    if (needsSetup) {
+        return (
+            <div className="flex justify-center items-center min-h-screen w-full p-4">
+                {/* RENDERIZA O FORMULÁRIO DE CADASTRO DO PRIMEIRO ADMIN */}
+                <PrimeiroAdminForm onCadastroSucesso={handleSetupSuccess} />
+            </div>
+        );
+    }
+
+    // 3. Se JÁ TEM admin (Sistema inicializado) - Login Diário
+    return (
+        <div className="flex justify-center items-center min-h-screen w-full p-4">
+            <DivFormulario>
+                <Formulario
+                    initialValues={{ senha: "", login: "" }}
+                    titulo="Assistente de Pronto Atendimento"
+                    onSubmit={handleSubmit}
                 >
-                  Cadastrar-se
-                </Botao>
-              </Link>
-            </>
-          )}
-        </Formulario>
+                    {({ formData, handleChange }) => (
+                        <>
+                            {apiError && (
+                                <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded text-center">
+                                    <strong>Falha no login:</strong> {apiError}
+                                </div>
+                            )}
 
-        <Link href="/paciente/fila" className="text-center text-primaria">
-          Esqueci minha senha
-        </Link>
-      </DivFormulario>
-    </div>
-  );
+                            <Campo
+                                label="CPF/Identificador:"
+                                placeholder="CPF/Identificador"
+                                name="login"
+                                value={formData.login || ""}
+                                type="text"
+                                onChange={handleChange}
+                                error={errors.login}
+                                disabled={isLoading}
+                            />
+
+                            <Campo
+                                label="Senha:"
+                                placeholder="senha"
+                                name="senha"
+                                value={formData.senha || ""}
+                                type="password"
+                                onChange={handleChange}
+                                error={errors.senha}
+                                disabled={isLoading}
+                            />
+
+                            <Botao maximo={700} disabled={isLoading}>
+                                {isLoading ? "Entrando..." : "Entrar"}
+                            </Botao>
+
+                            <Link href="/cadastro">
+                                <Botao
+                                    maximo={700}
+                                    background="var(--color-botao-terceira)"
+                                    color="var(--color-text-botao-secundaria)"
+                                    disabled={isLoading}
+                                    type="button"
+                                >
+                                    Cadastrar-se
+                                </Botao>
+                            </Link>
+                        </>
+                    )}
+                </Formulario>
+
+                <Link href="/paciente/fila" className="text-center text-primaria">
+                    Esqueci minha senha
+                </Link>
+            </DivFormulario>
+        </div>
+    );
 }
