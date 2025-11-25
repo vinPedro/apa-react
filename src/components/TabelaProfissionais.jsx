@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 
 const TabelaProfissionais = ({ profissionais }) => {
@@ -20,9 +18,11 @@ const TabelaProfissionais = ({ profissionais }) => {
       <tbody>
         {profissionais.map((profissional) => (
           <tr key={profissional.id} style={styles.tr}>
-            <td style={styles.td}>{profissional.nome}</td>
+            {/* CORREÇÃO AQUI: de .nome para .nomeCompleto */}
+            <td style={styles.td}>{profissional.nomeCompleto}</td>
             <td style={styles.td}>{profissional.cns}</td>
-            <td style={styles.td}>{profissional.especialidade}</td>
+            {/* Ajuste opcional: O DTO tem 'conselhoProfissional', não 'especialidade' direta, verifique se precisa ajustar */}
+            <td style={styles.td}>{profissional.conselhoProfissional}</td> 
             <td style={styles.td}>
               <button style={styles.button}>Detalhes</button>
             </td>

@@ -1,19 +1,24 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useAuth } from '@/AuthContext'; // <-- 1. Importar o useAuth
+import { useAuth } from '@/AuthContext';
+import AlertMessage from '@/components/AlertMessage';
+import { useViaCep } from '@/hooks/useViaCep';
+import Campo from '@/components/Campo';
 
 export default function UbsCadastroForm() {
-    const { token } = useAuth(); // <-- 2. Obter o token do contexto
+    const { token } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [success, setSuccess] = useState(null); // <-- ADICIONADO
+    const [alert, setAlert] = useState(null);
+    
+    // Estado de erros para validação visual
+    const [errors, setErrors] = useState({});
 
     const [formData, setFormData] = useState({
-        // Renomear para corresponder ao DTO do backend
         codigoCnes: '', 
         cnpj: '',
         nome: '',
+        cep: '',
         logradouro: '',
         bairro: '',
         municipio: '',
@@ -21,65 +26,79 @@ export default function UbsCadastroForm() {
         telefone: '', 
     });
 
+    const { buscarCep, loadingCep, camposTravados } = useViaCep(setFormData, setAlert);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+        // Limpa o erro ao digitar
+        if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
+    };
+
+    const handleBlurCep = (e) => {
+        buscarCep(e.target.value);
+    };
+
+    // --- FUNÇÃO DE VALIDAÇÃO ---
+    const validate = () => {
+        const newErrors = {};
+        
+        if (!formData.codigoCnes) newErrors.codigoCnes = "Obrigatório";
+        if (!formData.cnpj) newErrors.cnpj = "Obrigatório";
+        if (!formData.nome) newErrors.nome = "Obrigatório";
+        if (!formData.cep) newErrors.cep = "Obrigatório";
+        if (!formData.municipio) newErrors.municipio = "Obrigatório";
+        if (!formData.uf) newErrors.uf = "Obrigatório";
+        if (!formData.logradouro) newErrors.logradouro = "Obrigatório";
+        if (!formData.bairro) newErrors.bairro = "Obrigatório";
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        // Validação simples para garantir que o admin está logado
+        // Valida antes de enviar
+        if (!validate()) {
+            setAlert({ message: "Preencha os campos obrigatórios.", variant: "warning" });
+            return;
+        }
+        
         if (!token) {
-            
-            setError("Erro: Você não está autenticado. Faça login novamente.");
-            
+            setAlert({ message: "Erro: Você não está autenticado.", variant: "error" });
             return;
         }
 
         setIsLoading(true);
-        setError(null);
-        setSuccess(null);
-
-        // Preparar os dados para enviar (exatamente como o DTO)
-        const dadosParaApi = {
-            codigoCnes: formData.codigoCnes,
-            cnpj: formData.cnpj,
-            nome: formData.nome,
-            logradouro: formData.logradouro,
-            bairro: formData.bairro,
-            municipio: formData.municipio,
-            uf: formData.uf,
-        };
+        setAlert(null);
 
         try {
-            // Fazer a requisição fetch para o endpoint da API
-            const response = await fetch('http://localhost:8080/api/unidades', {
+            const response = await fetch('/api/unidades', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}` 
                 },
-                body: JSON.stringify(dadosParaApi),
+                body: JSON.stringify(formData),
             });
 
             if (!response.ok) {
-                // Tenta ler a mensagem de erro do backend
                 const erroData = await response.json();
-                throw new Error(erroData.message || `Erro ${response.status}: Falha ao cadastrar UBS`);
+                throw new Error(erroData.message || `Erro ${response.status}: Falha ao cadastrar`);
             }
 
-            setSuccess(`UBS "${formData.nome}" cadastrada com sucesso!`);
+            setAlert({ message: `UBS "${formData.nome}" cadastrada com sucesso!`, variant: "success" });
             
             setFormData({
-                codigoCnes: '', cnpj: '', nome: '', logradouro: '',
+                codigoCnes: '', cnpj: '', nome: '', cep: '', logradouro: '',
                 bairro: '', municipio: '', uf: '', telefone: '',
             });
+            setErrors({});
 
         } catch (err) {
-            console.error("Erro ao cadastrar UBS:", err);
-            setError(err.message);
-            
+            console.error("Erro:", err);
+            setAlert({ message: err.message, variant: "error" });
         } finally {
             setIsLoading(false);
         }
@@ -87,154 +106,147 @@ export default function UbsCadastroForm() {
 
     return (
         <div className="flex justify-center items-start w-full min-h-screen p-4">
+            
+            {alert && (
+                <AlertMessage 
+                    message={alert.message} 
+                    variant={alert.variant} 
+                    onClose={() => setAlert(null)} 
+                />
+            )}
+
             <form
                 onSubmit={handleSubmit}
-                className="
-                    bg-white p-6 sm:p-8 rounded-2xl shadow-lg border border-gray-200
-                    w-full max-w-lg md:max-w-2xl
-                "
+                className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg border border-gray-200 w-full max-w-lg md:max-w-3xl"
             >
                 <h2 className="text-xl sm:text-2xl font-semibold text-center text-gray-900 mb-8">
                     Cadastro de UBS
                 </h2>
 
-                {/* Exibição de Erro */}
-                {error && (
-                    <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-                        <strong>Falha no cadastro:</strong> {error}
-                    </div>
-                )}
-
-                {success && (
-                    <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
-                        <strong>Sucesso!</strong> {success}
-                    </div>
-                )}
-
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    
                     <div className="sm:col-span-1">
-                        <label className="text-sm font-medium text-gray-700">Código CNES</label>
-                        <input
-                            type="text"
-                            name="codigoCnes"
-                            value={formData.codigoCnes}
-                            onChange={handleChange}
-                            required
-                            maxLength={7}
+                        <Campo 
+                            label="Código CNES" 
+                            name="codigoCnes" 
+                            value={formData.codigoCnes} 
+                            onChange={handleChange} 
+                            maxLength={7} 
                             placeholder="Ex: 1234567"
-                            className="w-full p-3 mt-1 border rounded-md"
-                            disabled={isLoading}
+                            error={errors.codigoCnes} // Erro visual
+                            disabled={isLoading} 
                         />
                     </div>
 
                     <div className="sm:col-span-1">
-                        <label className="text-sm font-medium text-gray-700">CNPJ</label>
-                        <input
-                            type="text"
-                            name="cnpj"
-                            value={formData.cnpj}
-                            onChange={handleChange}
-                            required
+                        <Campo 
+                            label="CNPJ" 
+                            name="cnpj" 
+                            value={formData.cnpj} 
+                            onChange={handleChange} 
                             placeholder="Ex: 12.345.678/0001-99"
-                            className="w-full p-3 mt-1 border rounded-md"
-                            disabled={isLoading}
+                            error={errors.cnpj}
+                            disabled={isLoading} 
                         />
                     </div>
-
+                    
                     <div className="sm:col-span-2">
-                        <label className="text-sm font-medium text-gray-700">Nome da UBS</label>
-                        <input
-                            type="text"
-                            name="nome"
-                            value={formData.nome}
-                            onChange={handleChange}
-                            required
+                        <Campo 
+                            label="Nome da UBS" 
+                            name="nome" 
+                            value={formData.nome} 
+                            onChange={handleChange} 
                             placeholder="Ex: UBS Central"
-                            className="w-full p-3 mt-1 border rounded-md"
-                            disabled={isLoading}
+                            error={errors.nome}
+                            disabled={isLoading} 
                         />
+                    </div>
+
+                    {/* --- BLOCO DE ENDEREÇO --- */}
+                    <div className="sm:col-span-2 border-t pt-4 mt-2">
+                        <h3 className="text-gray-700 font-semibold mb-3">Endereço</h3>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                            <div className="sm:col-span-3">
+                                <Campo
+                                    label={loadingCep ? "Buscando..." : "CEP"}
+                                    name="cep"
+                                    value={formData.cep}
+                                    onChange={handleChange}
+                                    onBlur={handleBlurCep}
+                                    maxLength={9}
+                                    placeholder="00000-000"
+                                    error={errors.cep}
+                                    disabled={isLoading || loadingCep}
+                                />
+                            </div>
+                            <div className="sm:col-span-9">
+                                <Campo 
+                                    label="Logradouro" 
+                                    name="logradouro" 
+                                    value={formData.logradouro} 
+                                    onChange={handleChange} 
+                                    placeholder="Ex: Rua das Flores"
+                                    error={errors.logradouro}
+                                    disabled={isLoading || camposTravados.logradouro} 
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 mt-3">
+                            <div className="sm:col-span-5">
+                                <Campo 
+                                    label="Bairro" 
+                                    name="bairro" 
+                                    value={formData.bairro} 
+                                    onChange={handleChange} 
+                                    placeholder="Ex: Centro"
+                                    error={errors.bairro}
+                                    disabled={isLoading || camposTravados.bairro} 
+                                />
+                            </div>
+                            <div className="sm:col-span-5">
+                                <Campo 
+                                    label="Município" 
+                                    name="municipio" 
+                                    value={formData.municipio} 
+                                    onChange={handleChange} 
+                                    placeholder="Ex: João Pessoa"
+                                    error={errors.municipio}
+                                    disabled={isLoading || camposTravados.municipio} 
+                                />
+                            </div>
+                            <div className="sm:col-span-2">
+                                <Campo 
+                                    label="UF" 
+                                    name="uf" 
+                                    value={formData.uf} 
+                                    onChange={handleChange} 
+                                    maxLength={2} 
+                                    placeholder="PB"
+                                    error={errors.uf}
+                                    disabled={isLoading || camposTravados.uf} 
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     <div className="sm:col-span-2">
-                        <label className="text-sm font-medium text-gray-700">Logradouro</label>
-                        <input
-                            type="text"
-                            name="logradouro"
-                            value={formData.logradouro}
-                            onChange={handleChange}
-                            required
-                            placeholder="Ex: Rua das Flores"
-                            className="w-full p-3 mt-1 border rounded-md"
-                            disabled={isLoading}
-                        />
-                    </div>
-
-                    <div className="sm:col-span-1">
-                        <label className="text-sm font-medium text-gray-700">Bairro</label>
-                        <input
-                            type="text"
-                            name="bairro"
-                            value={formData.bairro}
-                            onChange={handleChange}
-                            required
-                            className="w-full p-3 mt-1 border rounded-md"
-                            disabled={isLoading}
-                        />
-                    </div>
-
-                    <div className="sm:col-span-1">
-                        <label className="text-sm font-medium text-gray-700">Município</label>
-                        <input
-                            type="text"
-                            name="municipio"
-                            value={formData.municipio}
-                            onChange={handleChange}
-                            required
-                            className="w-full p-3 mt-1 border rounded-md"
-                            disabled={isLoading}
-                        />
-                    </div>
-
-                    <div className="sm:col-span-1">
-                        <label className="text-sm font-medium text-gray-700">UF</label>
-                        <input
-                            type="text"
-                            name="uf"
-                            maxLength={2}
-                            value={formData.uf}
-                            onChange={handleChange}
-                            required
-                            className="w-full p-3 mt-1 border rounded-md uppercase"
-                            placeholder="Ex: PB"
-                            disabled={isLoading}
-                        />
-                    </div>
-
-                    <div className="sm:col-span-1">
-                        <label className="text-sm font-medium text-gray-700">Telefone (Opcional)</label>
-                        <input
-                            type="tel"
-                            name="telefone"
-                            value={formData.telefone}
-                            onChange={handleChange}
+                        <Campo 
+                            label="Telefone (Opcional)" 
+                            name="telefone" 
+                            value={formData.telefone} 
+                            onChange={handleChange} 
+                            type="tel" 
                             placeholder="Ex: (83) 99999-9999"
-                            className="w-full p-3 mt-1 border rounded-md"
-                            disabled={isLoading}
+                            disabled={isLoading} 
                         />
                     </div>
                 </div>
 
                 <button
                     type="submit"
-                    className={`
-                        w-full py-3 mt-8
-                        text-white text-base font-semibold rounded-lg
-                        transition
-                        ${isLoading 
-                            ? 'bg-gray-400 cursor-not-allowed' 
-                            : 'bg-blue-600 hover:bg-blue-700'
-                        }
-                    `}
+                    className={`w-full py-3 mt-8 text-white font-semibold rounded-lg transition ${isLoading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
                     disabled={isLoading}
                 >
                     {isLoading ? 'Cadastrando...' : 'Cadastrar UBS'}

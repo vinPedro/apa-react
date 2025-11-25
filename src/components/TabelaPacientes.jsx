@@ -18,11 +18,11 @@ const TabelaPacientes = ({ pacientes }) => {
       <tbody>
         {pacientes.map((paciente) => (
           <tr key={paciente.id} style={styles.tr}>
-            <td style={styles.td}>{paciente.nome}</td>
+            {/* CORREÇÃO AQUI: de .nome para .nomeCompleto */}
+            <td style={styles.td}>{paciente.nomeCompleto}</td>
             <td style={styles.td}>{paciente.cpf}</td>
             <td style={styles.td}>{paciente.dataNascimento}</td>
             <td style={styles.td}>
-              {/* Você pode adicionar botões de Ações aqui, ex: Visualizar */}
               <button style={styles.button}>Detalhes</button>
             </td>
           </tr>

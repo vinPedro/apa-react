@@ -1,56 +1,49 @@
-
-
 "use client";
 
 import React, { useState } from 'react';
-// ⚠️ Ajuste os caminhos de importação se necessário:
+import { ShieldAlert, User, Lock } from 'lucide-react'; // Ícones modernos
 import DivFormulario from '@/components/DivFormulario.jsx'; 
 import Campo from '@/components/Campo.jsx';                 
 import Botao from '@/components/Botao.jsx';                
+import AlertMessage from '@/components/AlertMessage'; 
 
 export default function PrimeiroAdminForm({ onCadastroSucesso }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [mensagem, setMensagem] = useState('');
+  const [alert, setAlert] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!username || !password) {
-      setMensagem('Nome de usuário e senha são obrigatórios.');
+      setAlert({ message: 'Preencha todos os campos.', variant: 'warning' });
       return;
     }
     
     setLoading(true);
-    setMensagem('');
+    setAlert(null);
 
     try {
-      
       const response = await fetch('/api/setup/criar-admin', { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        
         body: JSON.stringify({ login: username, senha: password }), 
       });
 
-     
       if (response.ok || response.status === 201) { 
-        setMensagem('✅ Administrador cadastrado com sucesso! Redirecionando para login...');
+        setAlert({ message: 'Sistema configurado com sucesso! Redirecionando...', variant: 'success' });
         if (onCadastroSucesso) {
-            setTimeout(onCadastroSucesso, 1500); 
+            setTimeout(onCadastroSucesso, 2000); 
         }
-      } else if (response.status === 409) { 
-        setMensagem('❌ Erro: O sistema já possui um administrador configurado. Por favor, faça login.');
       } else {
-        
         const data = await response.json(); 
-        setMensagem(`❌ Erro: ${data.message || 'Falha ao cadastrar. Verifique o servidor.'}`);
+        setAlert({ message: `Erro: ${data.message || 'Falha ao cadastrar.'}`, variant: 'error' });
       }
 
     } catch (error) {
-      setMensagem('❌ Erro de conexão com o servidor. Verifique a API.');
       console.error('Erro de setup:', error);
+      setAlert({ message: 'Erro de conexão com o servidor.', variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -58,60 +51,72 @@ export default function PrimeiroAdminForm({ onCadastroSucesso }) {
 
   return (
     <DivFormulario> 
-        {/* Título e Descrição */}
-        <div className="text-center mb-6"> 
-            <h2 className="text-2xl font-bold text-red-600 mb-2 flex items-center justify-center">
-                <span className="mr-2 text-3xl">🚨</span> Configuração Inicial Requerida
+        {alert && (
+            <AlertMessage 
+                message={alert.message} 
+                variant={alert.variant} 
+                onClose={() => setAlert(null)} 
+            />
+        )}
+
+        {/* --- CABEÇALHO MAIS MODERNO --- */}
+        <div className="flex flex-col items-center text-center mb-8"> 
+            <div className="bg-red-100 p-4 rounded-full mb-4 animate-pulse">
+                <ShieldAlert className="w-10 h-10 text-red-600" />
+            </div>
+            
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                Configuração Inicial
             </h2>
-            <p className="text-gray-700 leading-relaxed">
-                Nenhum administrador foi encontrado no sistema. Por favor, preencha os campos 
-                abaixo para criar a conta de administrador principal.
+            
+            <p className="text-gray-500 text-sm leading-relaxed max-w-xs mx-auto">
+                Bem-vindo ao <strong>APA</strong>. Detectamos que este é o primeiro acesso. Crie a conta mestre para continuar.
             </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full"> 
+        {/* --- FORMULÁRIO --- */}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full px-2"> 
             
-            {/* Campo Nome de Usuário */}
-            <Campo
-                label="Nome de Usuário (Login)"
-                placeholder="Ex: admin.principal"
-                valor={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full" 
-            />
+            <div className="relative">
+                <div className="absolute top-[34px] left-3 text-gray-400 z-10">
+                    {/* Ícone decorativo se quiser, ou apenas mantenha o campo simples */}
+                </div>
+                <Campo
+                    label="Nome de Usuário (Admin)"
+                    placeholder="Ex: admin.master"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    disabled={loading}
+                    className="w-full" 
+                />
+            </div>
             
-            {/* Campo Senha */}
-            <Campo
-                label="Senha"
-                type="password"
-                placeholder="Defina uma senha forte"
-                valor={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full"
-            />
+            <div>
+                <Campo
+                    label="Senha de Acesso"
+                    type="password"
+                    placeholder="Crie uma senha forte"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
+                    className="w-full"
+                />
+                <p className="text-xs text-gray-400 mt-1 text-right">Mínimo de 6 caracteres</p>
+            </div>
 
-            {/* Botão de Submissão - Centralizado */}
-            <div className="mt-4 flex justify-center"> 
+            <div className="mt-6"> 
                 <Botao 
                     type="submit" 
                     disabled={loading}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-md transition duration-200"
+                    background="#2563eb" // Azul royal
+                    color="#ffffff"
+                    // Forçamos w-full via style ou classe se o componente aceitar
+                    style={{ width: '100%', backgroundColor: '#2563eb', color: 'white' }} 
                 >
-                    {loading ? 'Cadastrando...' : 'Criar Administrador'}
+                    {loading ? 'Configurando Sistema...' : 'Criar Administrador'}
                 </Botao>
             </div>
         </form>
-        
-        {/* Mensagens de Feedback */}
-        {mensagem && (
-            <div 
-                className={`mt-4 p-3 rounded text-center ${mensagem.startsWith('❌') 
-                    ? 'bg-red-100 border border-red-400 text-red-700' 
-                    : 'bg-green-100 border border-green-400 text-green-700'}`}
-            >
-                {mensagem}
-            </div>
-        )}
     </DivFormulario>
   );
 }

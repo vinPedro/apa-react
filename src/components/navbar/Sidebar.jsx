@@ -45,8 +45,8 @@ function Sidebar() {
 
           {profile === "Paciente" && (
             <>
-              <NavItem to="/paciente" label="Painel do Paciente" />
-              <NavItem to="/paciente/fila" label="Fila" />
+              <NavItem to="/Paciente" label="Painel do Paciente" />
+              <NavItem to="/Paciente/fila" label="Fila" />
             </>
 
           )}

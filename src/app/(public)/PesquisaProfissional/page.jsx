@@ -1,58 +1,65 @@
-// src\app\(public)\PesquisaProfissional\page.jsx
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-
-// Ajuste o caminho relativo (../../../components/) se necessário
+import { useAuth } from '@/AuthContext'; // <-- Importar Auth
 import ComboBox from '../../../components/ComboBox.jsx'; 
 import Campo from '../../../components/Campo.jsx'; 
-import TabelaProfissionais from '../../../components/TabelaProfissionais.jsx'; // Novo componente
-
-// 💡 SIMULAÇÃO DE DADOS:
-const MOCK_PROFISSIONAIS = [
-  { id: 101, nome: 'Dr. Ricardo Alves', cns: '700401476921234', especialidade: 'Clínico Geral' },
-  { id: 102, nome: 'Dra. Ana Paula Mota', cns: '708507851234567', especialidade: 'Enfermeira' },
-  { id: 103, nome: 'Enf. João Silva', cns: '700101459876543', especialidade: 'Enfermeiro' },
-  { id: 104, nome: 'Dra. Carolina Souza', cns: '700000012345678', especialidade: 'Pediatra' },
-];
-
-// ----------------------------------------------------------------------
+import TabelaProfissionais from '../../../components/TabelaProfissionais.jsx'; 
+import AlertMessage from '@/components/AlertMessage'; // <-- AlertMessage
 
 export default function PesquisaProfissional() {
-  const [tipoFiltro, setTipoFiltro] = useState('nome'); // 'nome' ou 'cns'
+  const { token } = useAuth(); // <-- Token
+  const [tipoFiltro, setTipoFiltro] = useState('nome');
   const [termoBusca, setTermoBusca] = useState('');
   const [profissionaisFiltrados, setProfissionaisFiltrados] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [alert, setAlert] = useState(null);
 
-  // Array de opções no formato que o ComboBox espera: { value, text }
   const opcoesFiltro = [
     { value: 'nome', text: 'Nome do Profissional' }, 
-    { value: 'cns', text: 'CNS (Cartão Nacional de Saúde)' }
+    { value: 'cns', text: 'CNS' },
+    { value: 'cpf', text: 'CPF' }
   ];
 
   const buscarProfissionais = useCallback(async (filtro, termo) => {
-    // Para CNS, exigimos 5 dígitos; para Nome, 2
-    if (termo.length < (filtro === 'cns' ? 5 : 2)) {
+    if (termo.length < (filtro === 'nome' ? 2 : 3)) {
       setProfissionaisFiltrados([]);
       return;
     }
 
-    setIsLoading(true);
-    // Simulação de delay de rede
-    await new Promise(resolve => setTimeout(resolve, 300)); 
+    if (!token) {
+        setAlert({ message: "Erro de autenticação. Faça login.", variant: "error" });
+        return;
+    }
 
-    const termoLowerCase = termo.toLowerCase();
-    
-    // Simulação do filtro parcial (LIKE no backend)
-    const resultados = MOCK_PROFISSIONAIS.filter(profissional => {
-      const valor = filtro === 'nome' ? profissional.nome.toLowerCase() : profissional.cns;
-      return valor.includes(termoLowerCase);
-    });
-    
-    setProfissionaisFiltrados(resultados);
-    setIsLoading(false);
-  }, []);
+    setIsLoading(true);
+    setAlert(null);
+
+    try {
+      // Endpoint: /api/profissionais/buscar
+      const response = await fetch(`/api/profissionais/buscar?tipo=${filtro.toUpperCase()}&termo=${termo}`, {
+          method: 'GET',
+          headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+          }
+      });
+
+      if (!response.ok) {
+          throw new Error('Erro ao buscar profissionais.');
+      }
+
+      const data = await response.json();
+      setProfissionaisFiltrados(data);
+
+    } catch (error) {
+      console.error("Erro na busca:", error);
+      setAlert({ message: "Falha ao buscar dados.", variant: "error" });
+      setProfissionaisFiltrados([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [token]);
 
   useEffect(() => {
     if (termoBusca.trim() === '') {
@@ -76,40 +83,52 @@ export default function PesquisaProfissional() {
 
   return (
     <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      <h1>👨‍⚕️ Filtro de Profissionais de Saúde</h1>
+      {alert && (
+          <AlertMessage 
+              message={alert.message} 
+              variant={alert.variant} 
+              onClose={() => setAlert(null)} 
+          />
+      )}
+
+      <h1 className="text-2xl font-bold mb-4 text-gray-800">Buscar Profissionais</h1>
       
-      {/* SEÇÃO DE FILTRO */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px', padding: '10px', border: '1px solid #ddd', borderRadius: '8px' }}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border border-gray-200 rounded-lg bg-white shadow-sm">
+        <div className="md:col-span-1">
+            <ComboBox
+              label="Critério de Busca"
+              options={opcoesFiltro}
+              value={tipoFiltro}
+              onChange={(valor) => { 
+                setTipoFiltro(valor);
+                setTermoBusca(''); 
+                setProfissionaisFiltrados([]);
+              }}
+            />
+        </div>
         
-        <ComboBox
-          label="Critério de Busca"
-          options={opcoesFiltro}
-          value={tipoFiltro}
-          onChange={(valor) => { 
-            setTipoFiltro(valor);
-            setTermoBusca(''); 
-          }}
-        />
-        
-        <Campo
-          label={`Digite o ${tipoFiltro === 'nome' ? 'Nome' : 'CNS'}:`}
-          placeholder={`Comece a digitar o ${tipoFiltro}...`}
-          valor={termoBusca}
-          onChange={handleBuscaChange}
-        />
+        <div className="md:col-span-2">
+            <Campo
+              label={`Digite o ${tipoFiltro.toUpperCase()}:`}
+              placeholder={`Pesquisar...`}
+              value={termoBusca}
+              onChange={handleBuscaChange}
+              disabled={isLoading}
+            />
+        </div>
       </div>
 
-      <hr style={{ margin: '30px 0' }}/>
-
+      <hr className="my-6 border-gray-300"/>
       
-      <h2>Resultados da Pesquisa</h2>
-      {isLoading && termoBusca.length > 0 && <p style={{ color: '#007bff' }}>Buscando...</p>}
+      <h2 className="text-xl font-semibold mb-2">Resultados</h2>
       
-      {!isLoading && termoBusca.length === 0 && (
-        <p>Comece a digitar no campo acima para exibir a lista de profissionais.</p>
+      {isLoading && <p className="text-blue-600 font-medium">Buscando...</p>}
+      
+      {!isLoading && termoBusca.length > 0 && profissionaisFiltrados.length === 0 && (
+        <p className="text-gray-500">Nenhum profissional encontrado.</p>
       )}
       
-      {!isLoading && termoBusca.length > 0 && (
+      {!isLoading && profissionaisFiltrados.length > 0 && (
           <TabelaProfissionais profissionais={profissionaisFiltrados} />
       )}
       

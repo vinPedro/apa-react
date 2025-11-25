@@ -1,27 +1,22 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-
 import { useAuth } from "../AuthContext";
 import Botao from "@/components/Botao";
 import Campo from "@/components/Campo";
 import DivFormulario from "@/components/DivFormulario";
 import Formulario from "@/components/Formulario";
 import Link from "next/link";
-
-
 import PrimeiroAdminForm from '../components/forms/PrimeiroAdminForm.jsx';
-
+import AlertMessage from '@/components/AlertMessage'; // <-- Importação
 
 // ----------------------------------------------------
 // FUNÇÃO DE VERIFICAÇÃO DE STATUS
 // ----------------------------------------------------
 const checkAdminStatus = async () => {
     try {
-        
         const timestamp = Date.now();
         const url = `/api/setup/status?t=${timestamp}`;
-
        
         const response = await fetch(url, {
             cache: 'no-store', 
@@ -37,6 +32,7 @@ const checkAdminStatus = async () => {
         return false;
     }
 };
+
 // ----------------------------------------------------
 // COMPONENTE PRINCIPAL (HomePage/Login)
 // ----------------------------------------------------
@@ -47,11 +43,17 @@ export default function HomePage() {
     const [needsSetup, setNeedsSetup] = useState(false);
     const [verifying, setVerifying] = useState(true);
 
+    // --- ESTADOS E FUNÇÕES DO LOGIN DIÁRIO (USUÁRIO) ---
+    const [errors, setErrors] = useState({});
+    const [isLoading, setIsLoading] = useState(false);
+    
+    // Estado unificado para alertas (Erro ou Sucesso)
+    const [alert, setAlert] = useState(null);
+
     // --- LÓGICA DO SETUP ---
     useEffect(() => {
         const initializePage = async () => {
             const isInitialized = await checkAdminStatus();
-            
             setNeedsSetup(!isInitialized);
             setVerifying(false);
         };
@@ -59,19 +61,12 @@ export default function HomePage() {
     }, []);
 
     const handleSetupSuccess = async () => {
-      
         setVerifying(true);
         const isInitialized = await checkAdminStatus();
         setNeedsSetup(!isInitialized);
         setVerifying(false);
-        console.log("Administrador principal cadastrado com sucesso! Prossiga com o login.");
+        setAlert({ message: "Administrador configurado! Prossiga com o login.", variant: "success" });
     };
-    // ------------------------------------
-
-    // --- ESTADOS E FUNÇÕES DO LOGIN DIÁRIO (USUÁRIO) ---
-    const [errors, setErrors] = useState({});
-    const [apiError, setApiError] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
 
     const validate = (formData) => {
         const newErrors = {};
@@ -83,22 +78,24 @@ export default function HomePage() {
     const handleSubmit = async (data) => {
         const validationErrors = validate(data);
         setErrors(validationErrors);
-        setApiError(null);
+        setAlert(null); // Limpa alertas anteriores
 
         if (Object.keys(validationErrors).length === 0) {
             setIsLoading(true);
             try {
                 await login(data.login, data.senha);
+                // O redirecionamento acontece dentro do login(), se falhar cai no catch
             } catch (error) {
-                setApiError(error.message);
+                setAlert({ message: error.message || "Falha no login. Verifique suas credenciais.", variant: "error" });
             } finally {
                 setIsLoading(false);
             }
+        } else {
+             setAlert({ message: "Preencha os campos obrigatórios.", variant: "warning" });
         }
     };
 
     // --- RENDERIZAÇÃO CONDICIONAL ---
-
     
     if (verifying) {
         return (
@@ -111,15 +108,23 @@ export default function HomePage() {
     if (needsSetup) {
         return (
             <div className="flex justify-center items-center min-h-screen w-full p-4">
-                
                 <PrimeiroAdminForm onCadastroSucesso={handleSetupSuccess} />
             </div>
         );
     }
 
-   
     return (
         <div className="flex justify-center items-center min-h-screen w-full p-4">
+            
+            {/* Componente AlertMessage */}
+            {alert && (
+                <AlertMessage 
+                    message={alert.message} 
+                    variant={alert.variant} 
+                    onClose={() => setAlert(null)} 
+                />
+            )}
+
             <DivFormulario>
                 <Formulario
                     initialValues={{ senha: "", login: "" }}
@@ -128,12 +133,6 @@ export default function HomePage() {
                 >
                     {({ formData, handleChange }) => (
                         <>
-                            {apiError && (
-                                <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded text-center">
-                                    <strong>Falha no login:</strong> {apiError}
-                                </div>
-                            )}
-
                             <Campo
                                 label="CPF/Identificador:"
                                 placeholder="CPF/Identificador"
