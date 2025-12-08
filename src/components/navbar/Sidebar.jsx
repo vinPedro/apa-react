@@ -3,6 +3,8 @@
 // --- 1. Importar o 'logout' do contexto ---
 import { useAuth } from "../../AuthContext";
 import NavItem from "./SidebarItem";
+import SidebarGroup from "./SidebarGroup";
+
 
 function Sidebar() {
   // --- 2. Obter a função 'logout' ---
@@ -21,14 +23,29 @@ function Sidebar() {
             <>
               {profile === "admin" && (
                 <>
-                  <NavItem to="/admin" label="Painel Admin" />
-                  <NavItem to="/Instituicoes/ubs" label="Cadastrar Posto de Saúde (PSF)" />
-                  <NavItem to="/CadastroProfissional" label="Cadastro de Profissional de Saúde" />
-                  <NavItem to="/PesquisaPaciente" label="Encontrar Pacientes" />
-                  <NavItem to="/PesquisaProfissional" label="Encontrar Profissionais de Saúde" />
-                  <NavItem to="/onboarding" label="Ficha de espera da vez" />
-                  <NavItem to="/FiltroProntuario" label="Buscar Prontuários" />
+                  <NavItem to="/admin" label="PAINEL DO ADMIN" />
 
+                  <SidebarGroup title="CADASTROS">
+                    <NavItem to="/Instituicoes/ubs" label="Posto de Saúde (PSF)" />
+                    <NavItem to="/CadastroProfissional" label="Profissional de Saúde" />
+                    <NavItem to="/CadastrarPacientes" label="Paciente" />
+                  </SidebarGroup>
+
+                  <SidebarGroup title="BUSCAS">
+                    <NavItem to="/PesquisaPaciente" label="Pacientes" />
+                    <NavItem to="/PesquisaProfissional" label="Profissionais de Saúde" />
+                  </SidebarGroup>
+
+                  <SidebarGroup title="PRONTUÁRIOS">
+                    <NavItem to="/FiltroProntuario" label="Buscar Prontuários" />
+                    <NavItem to="/Fichamento" label="Cadastrar Fichamento" />
+                  </SidebarGroup>
+
+                  <SidebarGroup title="PAINEL DE FICHAS">
+                    <NavItem to="/onboarding" label="Ficha do Momento" />
+                  </SidebarGroup>
+                    
+                  
 
                 </>
               )}
