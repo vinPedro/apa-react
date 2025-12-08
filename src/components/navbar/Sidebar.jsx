@@ -26,6 +26,7 @@ function Sidebar() {
                   <NavItem to="/CadastroProfissional" label="Cadastro de Profissional de Saúde" />
                   <NavItem to="/PesquisaPaciente" label="Encontrar Pacientes" />
                   <NavItem to="/PesquisaProfissional" label="Encontrar Profissionais de Saúde" />
+                  <NavItem to="/onboarding" label="Ficha de espera da vez" />
 
 
                 </>
