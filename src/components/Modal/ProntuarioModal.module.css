@@ -1,0 +1,155 @@
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6); /* Fundo escuro sutil */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modalContent {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 700px; /* Levemente maior para respirar */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- Cabeçalho --- */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.header h3 {
+    margin: 0;
+    font-size: 1.5em;
+    color: #333;
+}
+
+.closeButton {
+    font-size: 2em;
+    cursor: pointer;
+    color: #aaa;
+    transition: color 0.2s;
+}
+
+.closeButton:hover {
+    color: #dc3545; /* Vermelho ao passar o mouse */
+}
+
+.divider {
+    border: none;
+    height: 1px;
+    background-color: #eee;
+    margin: 10px 0 20px 0;
+}
+
+/* --- Metadados e Seções --- */
+.metaData {
+    background-color: #f7f7f7; /* Fundo leve para destaque */
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border-left: 4px solid #007bff; /* Linha de destaque azul */
+}
+
+.metaData p {
+    margin: 5px 0;
+    font-size: 0.95em;
+}
+
+.section {
+    margin-bottom: 25px;
+    padding: 10px 0;
+}
+
+.section h4 {
+    color: #555;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+
+/* --- Texto do Prontuário --- */
+.textarea {
+    width: 100%;
+    min-height: 150px;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    resize: vertical;
+    font-family: Arial, sans-serif;
+    font-size: 0.9em;
+    background-color: #fff;
+    line-height: 1.5;
+    color: #444;
+}
+
+.diagnosisTag {
+    font-weight: bold;
+    color: #007bff;
+    background-color: #e6f0ff;
+    padding: 8px 15px;
+    border-radius: 20px; /* Borda arredondada */
+    display: inline-block;
+    margin-top: 5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Botões de Ação (Ajuste de Espaçamento) --- */
+.actionButtons {
+    display: flex;
+    justify-content: space-evenly; /* Distribui os botões com espaço entre eles */
+    gap: 20px; /* Espaço entre os botões */
+    margin: 20px 0;
+    padding: 10px 0;
+}
+
+.actionButtons button {
+    flex-grow: 1;
+    max-width: 250px;
+}
+
+/* Estilos específicos para os botões dentro do modal */
+.examButton {
+    background-color: #28a745;
+    color: white;
+}
+
+.medButton {
+    background-color: #ffc107;
+    color: #333;
+}
+
+.closeModalButton {
+    background-color: #6c757d; /* Cor neutra para fechar */
+    margin-top: 20px;
+}
+
+
+/* --- Novo Estilo para Centralizar o Botão Fechar --- */
+.closeButtonContainer {
+    display: flex; /* Habilita o Flexbox */
+    justify-content: center; /* Centraliza horizontalmente */
+    margin-top: 30px; /* Adiciona um bom espaçamento da seção acima */
+}
+
+/* Estilo do Botão Fechar */
+.closeModalButton {
+    background-color: #6c757d; 
+    /* Adiciona largura fixa para que a centralização seja notável */
+    width: 250px; 
+}
+/* ... (Mantenha todos os outros estilos inalterados) ... */
