@@ -27,7 +27,7 @@ function Sidebar() {
                   <NavItem to="/PesquisaPaciente" label="Encontrar Pacientes" />
                   <NavItem to="/PesquisaProfissional" label="Encontrar Profissionais de Saúde" />
                   <NavItem to="/onboarding" label="Ficha de espera da vez" />
-                  <NavItem to="/FichamentoPaciente" label="Detalhes do Paciente" />
+                  <NavItem to="/FiltroProntuario" label="Buscar Prontuários" />
 
 
                 </>
