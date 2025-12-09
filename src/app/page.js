@@ -174,7 +174,7 @@ export default function HomePage() {
                     )}
                 </Formulario>
 
-                <Link href="/paciente/fila" className="text-center text-primaria">
+                <Link href="/senha" className="text-center text-primaria">
                     Esqueci minha senha
                 </Link>
             </DivFormulario>
