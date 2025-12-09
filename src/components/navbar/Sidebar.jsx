@@ -25,23 +25,24 @@ function Sidebar() {
                 <>
                   <NavItem to="/admin" label="PAINEL DO ADMIN" />
 
-                  <SidebarGroup title="CADASTROS">
-                    <NavItem to="/Instituicoes/ubs" label="Posto de Saúde (PSF)" />
-                    <NavItem to="/CadastroProfissional" label="Profissional de Saúde" />
-                    <NavItem to="/CadastrarPacientes" label="Paciente" />
+                  <SidebarGroup title="PROFISSIONAL DE SAÚDE">
+                    <NavItem to="/CadastroProfissional" label="Cadastrar Profissional de Saúde" />
+                    <NavItem to="/PesquisaProfissional" label=" Buscar Profissionais de Saúde" />
                   </SidebarGroup>
 
-                  <SidebarGroup title="BUSCAS">
-                    <NavItem to="/PesquisaPaciente" label="Pacientes" />
-                    <NavItem to="/PesquisaProfissional" label="Profissionais de Saúde" />
+                  <SidebarGroup title="PACIENTES">
+                    <NavItem to="/CadastrarPacientes" label=" Cadastrar Paciente" />
+                    <NavItem to="/PesquisaPaciente" label="Buscar Pacientes" />
+                    <NavItem to="/FiltroStatusPaciente" label="Status de Pacientes" />
                   </SidebarGroup>
 
-                  <SidebarGroup title="PRONTUÁRIOS">
+                  <SidebarGroup title="PRONTUÁRIOS/FICHAMENTO">
                     <NavItem to="/FiltroProntuario" label="Buscar Prontuários" />
                     <NavItem to="/Fichamento" label="Cadastrar Fichamento" />
                   </SidebarGroup>
 
-                  <SidebarGroup title="PAINEL DE FICHAS">
+                  <SidebarGroup title="GERENCIAR UBS">
+                    <NavItem to="/Instituicoes/ubs" label="Posto de Saúde (PSF)" />
                     <NavItem to="/onboarding" label="Ficha do Momento" />
                   </SidebarGroup>
                     
