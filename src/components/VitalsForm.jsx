@@ -1,13 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-export default function FormularioSinaisVitais({ onSalvar, onCancelar }) {
+// Adicionei a prop 'isLoading' e 'patient'
+export default function FormularioSinaisVitais({ onSalvar, onCancelar, patient, isLoading }) {
 
-  /* ============================
-     STATE DO FORMULÁRIO
-     👉 Dados que serão enviados ao backend
-     ============================ */
   const [formData, setFormData] = useState({
     paciente: "",
     ficha: "",
@@ -18,74 +15,50 @@ export default function FormularioSinaisVitais({ onSalvar, onCancelar }) {
     sintomas: "",
   });
 
-  /* ============================
-     HANDLER GENÉRICO
-     Atualiza os campos do formulário
-     ============================ */
+  // Efeito para preencher dados vindos do componente pai (Page)
+  useEffect(() => {
+    if (patient) {
+      setFormData(prev => ({
+        ...prev,
+        paciente: patient.nome || "",
+        ficha: patient.senha || ""
+      }));
+    }
+  }, [patient]);
+
   function handleChange(e) {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   }
 
-  /* ============================
-     SUBMIT
-     👉 AQUI É ONDE CONECTA COM O BACKEND
-     ============================ */
   async function handleSubmit(e) {
     e.preventDefault();
-
-    // ✅ Aqui você pode validar antes de enviar
-    // if (!formData.paciente || !formData.ficha) return;
-
-    // ✅ EXEMPLO DE CONEXÃO COM BACKEND
-    // Substitua a URL pela sua API
-    /*
-    await fetch("http://localhost:8080/sinais-vitais", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        // "Authorization": "Bearer SEU_TOKEN_JWT"
-      },
-      body: JSON.stringify(formData),
-    });
-    */
-
-    // ✅ Ou apenas enviar os dados para o componente pai
     if (onSalvar) {
       onSalvar(formData);
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 px-4 py-8">
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-4xl bg-white rounded-2xl shadow-xl p-8 md:p-12"
       >
-
-        {/* ============================
-            CABEÇALHO
-           ============================ */}
         <header className="mb-10 text-center">
           <h1 className="text-3xl font-bold text-gray-800">
-            Cadastro de Sinais Vitais
+            Triagem / Sinais Vitais
           </h1>
           <p className="text-gray-500 mt-2">
-            Informe corretamente os dados do paciente
+            Registro clínico inicial do paciente
           </p>
         </header>
 
-        {/* ============================
-            IDENTIFICAÇÃO DO PACIENTE
-           ============================ */}
+        {/* IDENTIFICAÇÃO (Agora ReadOnly para garantir integridade com o ID da URL) */}
         <section className="mb-10">
           <h2 className="text-lg font-semibold text-gray-700 mb-5">
-            Identificação do Paciente
+            Identificação
           </h2>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            {/* ✅ Campo enviado ao backend */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">
                 Paciente
@@ -95,155 +68,113 @@ export default function FormularioSinaisVitais({ onSalvar, onCancelar }) {
                 name="paciente"
                 value={formData.paciente}
                 onChange={handleChange}
-                placeholder="Nome completo"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                disabled={true} // Travado pois vem da seleção anterior
+                className="w-full border border-gray-300 bg-gray-100 rounded-lg px-4 py-2.5 cursor-not-allowed"
               />
             </div>
-
-            {/* ✅ Campo alfanumérico enviado ao backend */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">
-                Número da Ficha
+                Senha / Ficha (Opcional)
               </label>
               <input
                 type="text"
                 name="ficha"
                 value={formData.ficha}
-                onChange={(e) => {
-                  const valor = e.target.value.replace(/[^a-zA-Z0-9]/g, "");
-                  setFormData(prev => ({ ...prev, ficha: valor }));
-                }}
-                placeholder="Ex: AB1023"
+                onChange={handleChange}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
           </div>
         </section>
 
-        {/* ============================
-            MEDIDAS CORPORAIS
-           ============================ */}
+        {/* MEDIDAS */}
         <section className="mb-10">
           <h2 className="text-lg font-semibold text-gray-700 mb-5">
-            Medidas Corporais
+            Dados Clínicos
           </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            {/* ✅ Peso enviado ao backend */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">
-                Peso (kg)
-              </label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Peso (kg)</label>
               <input
                 type="number"
                 step="0.1"
                 name="peso"
+                required
                 value={formData.peso}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500"
               />
             </div>
-
-            {/* ✅ Altura enviada ao backend */}
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">
-                Altura (m)
-              </label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Altura (m)</label>
               <input
                 type="number"
                 step="0.01"
                 name="altura"
+                required
                 value={formData.altura}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                placeholder="Ex: 1.75"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500"
               />
             </div>
-          </div>
-        </section>
-
-        {/* ============================
-            SINAIS VITAIS
-           ============================ */}
-        <section className="mb-10">
-          <h2 className="text-lg font-semibold text-gray-700 mb-5">
-            Sinais Vitais
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            {/* ✅ Pressão enviada ao backend */}
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">
-                Pressão Arterial
-              </label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">PA (mmHg)</label>
               <input
                 type="text"
                 name="pressao"
+                required
                 value={formData.pressao}
                 onChange={handleChange}
-                placeholder="120/80"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                placeholder="Ex: 12/8"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500"
               />
             </div>
-
-            {/* ✅ Temperatura enviada ao backend */}
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">
-                Temperatura (°C)
-              </label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Temp (°C)</label>
               <input
                 type="number"
                 step="0.1"
                 name="temperatura"
+                required
                 value={formData.temperatura}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
         </section>
 
-        {/* ============================
-            SINTOMAS
-           ============================ */}
         <section className="mb-12">
-          <h2 className="text-lg font-semibold text-gray-700 mb-5">
-            Sintomas Relatados
-          </h2>
-
-          {/* ✅ Texto livre enviado ao backend */}
+          <h2 className="text-lg font-semibold text-gray-700 mb-5">Sintomas / Queixa</h2>
           <textarea
             name="sintomas"
             value={formData.sintomas}
             onChange={handleChange}
-            rows={5}
-            placeholder="Descreva os sintomas do paciente"
+            rows={4}
             className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           />
         </section>
 
-        {/* ============================
-            BOTÕES
-            👉 Nenhuma lógica de backend aqui
-           ============================ */}
         <div className="flex justify-end gap-4">
           <button
             type="button"
             onClick={onCancelar}
-            className="px-6 py-2.5 rounded-lg border border-gray-400 text-gray-700 font-medium hover:bg-gray-100 transition"
+            disabled={isLoading}
+            className="px-6 py-2.5 rounded-lg border border-gray-400 text-gray-700 hover:bg-gray-100 transition"
           >
             Cancelar
           </button>
-
           <button
             type="submit"
-            className="px-6 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition shadow"
+            disabled={isLoading}
+            className={`px-6 py-2.5 rounded-lg text-white font-semibold shadow transition
+              ${isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}
+            `}
           >
-            Salvar Cadastro
+            {isLoading ? "Salvando..." : "Salvar Triagem"}
           </button>
         </div>
-
       </form>
     </div>
   );

@@ -2,8 +2,7 @@
 import React from 'react';
 
 const UnidadesMock = [
-  { id: '1', nome: 'UBS Central' },
-  { id: '2', nome: 'UPA Norte' },
+  { id: '1', nome: 'PSF DE TESTE AUTOMATICO' },
 ];
 
 const tabs = [

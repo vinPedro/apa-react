@@ -1,13 +1,10 @@
 'use client';
 
-// --- 1. Importar o 'logout' do contexto ---
 import { useAuth } from "../../AuthContext";
 import NavItem from "./SidebarItem";
 import SidebarGroup from "./SidebarGroup";
 
-
 function Sidebar() {
-  // --- 2. Obter a função 'logout' ---
   const { profile, logout } = useAuth();
 
   return (
@@ -18,7 +15,6 @@ function Sidebar() {
 
       <nav className="flex-1">
         <ul>
-          {/* O resto do seu menu (Admin, Profissional, Paciente) fica igual */}
           {(profile === "admin" || profile === "ProfissionaldeSaude") && (
             <>
               {profile === "admin" && (
@@ -26,38 +22,42 @@ function Sidebar() {
                   <NavItem to="/admin" label="PAINEL DO ADMIN" />
 
                   <SidebarGroup title="PROFISSIONAL DE SAÚDE">
-                    <NavItem to="/CadastroProfissional" label="Cadastrar Profissional de Saúde" />
-                    <NavItem to="/PesquisaProfissional" label=" Buscar Profissionais de Saúde" />
+                    <NavItem to="/CadastroProfissional" label="Cadastrar Profissional" />
+                    <NavItem to="/PesquisaProfissional" label="Buscar Profissionais" />
                   </SidebarGroup>
 
                   <SidebarGroup title="PACIENTES">
-                    <NavItem to="/CadastrarPacientes" label=" Cadastrar Paciente" />
+                    <NavItem to="/CadastrarPacientes" label="Cadastrar Paciente" />
                     <NavItem to="/PesquisaPaciente" label="Buscar Pacientes" />
-                    <NavItem to="/FiltroStatusPaciente" label="Status de Pacientes" />
+                    <NavItem to="/FiltroStatusPaciente" label="Fila / Status" />
                   </SidebarGroup>
 
-                  <SidebarGroup title="PRONTUÁRIOS/FICHAMENTO">
-                    <NavItem to="/FiltroProntuario" label="Buscar Prontuários" />
-                    <NavItem to="/Fichamento" label="Cadastrar Fichamento" />
+                  <SidebarGroup title="PRONTUÁRIOS">
+                    <NavItem to="/FiltroProntuario" label="Buscar Histórico" />
                   </SidebarGroup>
 
                   <SidebarGroup title="GERENCIAR UBS">
                     <NavItem to="/Instituicoes/ubs" label="Posto de Saúde (PSF)" />
-                    <NavItem to="/onboarding" label="Ficha do Momento" />
+                    <NavItem to="/onboarding" label="TV / Painel" />
                   </SidebarGroup>
-                    
-                  
-
                 </>
               )}
 
               {profile === "ProfissionaldeSaude" && (
                 <>
-                  <NavItem to="/ProfissionalDeSaude" label="Painel do Profissional" />
-                  <NavItem to="/CadastrarPacientes" label="Cadastrar Pacientes" />
-                  <NavItem to="/FichasAtivas" label="Visualizar Fichas Ativas" />
+                  <NavItem to="/ProfissionalDeSaude" label="Início" />
+                  
+                  {/* Link da Agenda Adicionado */}
+                  <NavItem to="/ProfissionalDeSaude/agenda" label="Minha Agenda" />
+                  
+                  {/* Corrigido: Aponta para a Fila que tem as abas de Recepção/Triagem */}
+                  <NavItem to="/FiltroStatusPaciente" label="Fila de Atendimento" />
+                  
+                  {/* Corrigido: Aponta para a busca de pacientes/histórico */}
                   <NavItem to="/PesquisaPaciente" label="Encontrar Pacientes" />
-                  <NavItem to="/VisualizarProntuarios" label="Visualizar Prontuários" />
+                  
+                  {/* Corrigido: Aponta para a página correta de Filtro/Visualização */}
+                  <NavItem to="/FiltroProntuario" label="Histórico Prontuários" />
                 </>
               )}
             </>
@@ -68,28 +68,20 @@ function Sidebar() {
               <NavItem to="/Paciente" label="Painel do Paciente" />
               <NavItem to="/Paciente/fila" label="Fila" />
             </>
-
           )}
 
           {!profile && <li className="text-gray-400 text-sm p-2">Faça login para ver o menu.</li>}
         </ul>
       </nav>
 
-      {/* Botão "Sair" adicionado aqui em baixo --- */}
       <div className="mt-auto pt-4 border-t border-blue-700">
         <p className="mb-2 text-xs text-gray-200">
           Perfil: <span className='capitalize font-bold'>{profile || 'Convidado'}</span>
         </p>
 
         <button
-          onClick={logout} // Chama a função de logout do AuthContext
-          className="
-            w-full py-2 px-4 rounded 
-            text-base font-medium 
-            bg-blue-800 hover:bg-blue-700 
-            text-white 
-            transition duration-150
-          "
+          onClick={logout}
+          className="w-full py-2 px-4 rounded text-base font-medium bg-blue-800 hover:bg-blue-700 text-white transition duration-150"
         >
           Sair
         </button>
