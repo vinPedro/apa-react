@@ -10,7 +10,7 @@ export default function Campo({
   placeholder, 
   error,
   maxLength, 
-  className 
+  className, 
 }) {
   
   const errorClass = error ? 'border-red-500' : 'border-foreground';

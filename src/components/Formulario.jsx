@@ -24,6 +24,7 @@ export default function Formulario({ initialValues, onSubmit, children, titulo, 
             [name]: value
         }));
     }
+    
 
     return (
         <div className="px-6 py-3">
