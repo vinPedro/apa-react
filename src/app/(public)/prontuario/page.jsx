@@ -1,225 +1,279 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/AuthContext";
+
+import DivFormulario from "@/components/DivFormulario";
 import DivBotoes from "@/components/DivBotoes";
 import Botao from "@/components/Botao";
-import { ToggleSwitch } from "@/components/ToggleSwitch";
-import DivFormulario from "@/components/DivFormulario";
+import Campo from "@/components/Campo";
+import Textarea from "@/components/Textarea";
 import FieldGroup from "@/components/FieldGroup";
 import Formulario from "@/components/Formulario";
-import Textarea from "@/components/Textarea";
-import Campo from "@/components/Campo"; // Importando Campo para o atestado
 import AlertMessage from "@/components/AlertMessage";
 
-function ProntuarioContent() {
-    const { token, isAuthenticated, profile } = useAuth();
+/* =============================
+   COMPONENTE PRINCIPAL
+============================= */
+function ProntuarioUX() {
+    const { token, isAuthenticated } = useAuth();
     const router = useRouter();
-    const searchParams = useSearchParams();
 
-    // Dados da URL
-    const atendimentoId = searchParams.get("atendimentoId");
-    const pacienteNome = searchParams.get("paciente") || "Paciente não identificado";
+    /* ===== CONTROLE ===== */
+    const [step, setStep] = useState(1);
 
+    /* ===== BUSCA ===== */
+    const [nomeBusca, setNomeBusca] = useState("");
+    const [pacientes, setPacientes] = useState([]);
+    const [paciente, setPaciente] = useState(null);
+
+    /* ===== DADOS ===== */
+    const [historicoConsultas, setHistoricoConsultas] = useState([]);
     const [alert, setAlert] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-    // --- Proteção de Rota ---
+    const [initialFormData] = useState({
+        queixa: "",
+        historico: "",
+        diagnostico: "",
+    });
+
+    /* ======================
+       PROTEÇÃO
+    ====================== */
     useEffect(() => {
-        // Ajuste conforme o perfil exato do seu AuthContext ("ProfissionaldeSaude" ou "admin")
-        if (!isAuthenticated) { 
-            router.push("/");
-        }
-    }, [isAuthenticated, profile, router]);
+        if (!isAuthenticated) router.push("/");
+    }, [isAuthenticated, router]);
 
-    // --- Envio do Formulário ---
-    const handleSubmit = async (formData) => {
-        setAlert(null);
-
-        if (!atendimentoId) {
-            setAlert({ message: "Erro: Atendimento não identificado (ID ausente).", variant: "error" });
+    /* ======================
+       BUSCA AUTOMÁTICA (DEBOUNCE)
+    ====================== */
+    useEffect(() => {
+        if (!nomeBusca || nomeBusca.length < 3) {
+            setPacientes([]);
             return;
         }
 
-        setIsLoading(true);
+        const timeout = setTimeout(() => {
+            buscarPaciente();
+        }, 500);
 
-        // Mapeamento para o DTO do Java (ProntuarioRequestDTO)
-        const payload = {
-            atendimentoId: parseInt(atendimentoId, 10),
-            queixaPrincipal: formData.queixa,
-            historicoDoenca: formData.historico,
-            exameFisico: formData.exaFisico,
-            diagnostico: formData.diagnostico,
-            prescricaoMedica: formData.prescricao,
-            examesSolicitados: formData.exames, // Novo campo
-            atestadoDias: formData.atestado ? parseInt(formData.atestado, 10) : 0, // Novo campo
-            mudarStatusMedicoParaIndisponivel: formData.sair // Boolean
-        };
+        return () => clearTimeout(timeout);
+    }, [nomeBusca]);
+
+    /* ======================
+       BUSCAR PACIENTES
+    ====================== */
+    const buscarPaciente = async () => {
+        if (!token) return;
+
+        setLoading(true);
+        setAlert(null);
 
         try {
-            const response = await fetch("http://localhost:8080/api/prontuarios", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify(payload),
-            });
+            const response = await fetch(
+                `http://localhost:8080/api/pacientes/buscar?tipo=NOME&termo=${encodeURIComponent(
+                    nomeBusca
+                )}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || "Erro ao finalizar atendimento.");
+                throw new Error("Erro ao buscar pacientes");
             }
 
-            setAlert({ message: "Atendimento finalizado com sucesso!", variant: "success" });
-
-            // Redireciona de volta para a lista/painel do profissional
-            setTimeout(() => {
-                router.push("/ProfissionalDeSaude"); 
-            }, 2000);
-
+            setPacientes(await response.json());
         } catch (error) {
-            console.error("Erro ao salvar prontuário:", error);
             setAlert({ message: error.message, variant: "error" });
         } finally {
-            setIsLoading(false);
+            setLoading(false);
         }
     };
 
+    /* ======================
+       ATENDER PACIENTE
+    ====================== */
+    const atenderPaciente = async (p) => {
+        setPaciente(p);
+        setStep(2);
+        setPacientes([]);
+        setNomeBusca("");
+
+        try {
+            const response = await fetch(
+                `http://localhost:8080/api/prontuarios/paciente/${p.id}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (response.ok) {
+                setHistoricoConsultas(await response.json());
+            }
+        } catch {
+            setHistoricoConsultas([]);
+        }
+    };
+
+    /* ======================
+       RENDER
+    ====================== */
     return (
-        <div className="flex justify-center items-center min-h-screen w-full p-4 bg-gray-50">
-            {alert && (
-                <AlertMessage 
-                    message={alert.message} 
-                    variant={alert.variant} 
-                    onClose={() => setAlert(null)} 
-                />
-            )}
+        <DivFormulario maxWidth={1200}>
+            <div className="w-full mx-auto px-8">
+                {alert && (
+                    <AlertMessage {...alert} onClose={() => setAlert(null)} />
+                )}
 
-            <DivFormulario maxWidth={800}>
-                <Formulario
-                    initialValues={{ 
-                        queixa: "", 
-                        historico: "", 
-                        exaFisico: "", 
-                        diagnostico: "", 
-                        prescricao: "", 
-                        exames: "",
-                        atestado: "",
-                        sair: false 
-                    }}
-                    titulo={`Atendimento Médico`}
-                    subTitulo={`Paciente: ${pacienteNome}`}
-                    onSubmit={handleSubmit}
-                >
-                    {({ formData, handleSelectChange, handleChange }) => (
-                        <>
-                            {/* Seção 1: Anamnese */}
-                            <FieldGroup title="1. Anamnese">
-                                <Textarea
-                                    label="Queixa Principal *"
-                                    value={formData.queixa}
-                                    name="queixa"
-                                    onChange={handleChange}
-                                    placeholder="O que o paciente está sentindo?" 
-                                    rows={2}
-                                />
-                                <Textarea
-                                    label="Histórico da Doença"
-                                    value={formData.historico}
-                                    name="historico"
-                                    onChange={handleChange}
-                                    placeholder="Histórico pregresso, alergias, comorbidades..." 
-                                    rows={3}
-                                />
-                            </FieldGroup>
+                {/* ===== ETAPA 1 — BUSCA ===== */}
+                {step === 1 && (
+                    <div className="bg-white p-8 rounded-xl shadow-md max-w-4xl mx-auto">
+                        <h1 className="text-2xl font-semibold mb-6">
+                            🔎 Buscar Paciente
+                        </h1>
 
-                            {/* Seção 2: Exame Físico */}
-                            <FieldGroup title="2. Exame Físico">
-                                <Textarea
-                                    value={formData.exaFisico}
-                                    name="exaFisico"
-                                    onChange={handleChange}
-                                    placeholder="Descreva os achados do exame físico..." 
-                                    rows={3}
-                                />
-                            </FieldGroup>
+                        <Campo
+                            label="Nome do Paciente"
+                            value={nomeBusca}
+                            onChange={(e) =>
+                                setNomeBusca(e.target.value)
+                            }
+                        />
 
-                            {/* Seção 3: Conduta */}
-                            <FieldGroup title="3. Conduta Médica">
-                                <Textarea
-                                    label="Diagnóstico (CID ou Descrição) *"
-                                    value={formData.diagnostico}
-                                    name="diagnostico"
-                                    onChange={handleChange}
-                                    placeholder="Conclusão diagnóstica" 
-                                    rows={2}
-                                />
-                                <Textarea
-                                    label="Prescrição Médica"
-                                    value={formData.prescricao}
-                                    name="prescricao"
-                                    onChange={handleChange}
-                                    placeholder="Medicamentos e posologia" 
-                                    rows={3}
-                                />
-                                <Textarea
-                                    label="Solicitação de Exames"
-                                    value={formData.exames}
-                                    name="exames"
-                                    onChange={handleChange}
-                                    placeholder="Exames laboratoriais ou de imagem" 
-                                    rows={2}
-                                />
-                                <div className="w-1/3">
-                                    <Campo 
-                                        label="Atestado (Dias)"
-                                        type="number"
-                                        name="atestado"
-                                        value={formData.atestado}
-                                        onChange={handleChange}
-                                        placeholder="0"
-                                    />
-                                </div>
-                            </FieldGroup>
+                        {loading && (
+                            <p className="mt-2 text-sm text-gray-500">
+                                Buscando...
+                            </p>
+                        )}
 
-                            {/* Opções Finais */}
-                            <div className="py-4 px-2 bg-gray-100 rounded-lg mt-4">
-                                <ToggleSwitch
-                                    label="Definir meu status como INDISPONÍVEL após este atendimento?"
-                                    id="sair-switch"
-                                    checked={formData.sair}
-                                    onChange={(valor) => handleSelectChange("sair", valor)}
-                                />
+                        {pacientes.length > 0 && (
+                            <div className="mt-6 border rounded-lg overflow-hidden">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-gray-100">
+                                        <tr>
+                                            <th className="p-3 text-left">
+                                                Nome
+                                            </th>
+                                            <th className="p-3 text-left">
+                                                ID
+                                            </th>
+                                            <th className="p-3 text-center">
+                                                Ação
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {pacientes.map((p) => (
+                                            <tr
+                                                key={p.id}
+                                                className="border-t hover:bg-gray-50"
+                                            >
+                                                <td className="p-3">
+                                                    {p.nomeCompleto}
+                                                </td>
+                                                <td className="p-3">
+                                                    {p.id}
+                                                </td>
+                                                <td className="p-3 text-center">
+                                                    <Botao
+                                                        onClick={() =>
+                                                            atenderPaciente(p)
+                                                        }
+                                                    >
+                                                        Atender
+                                                    </Botao>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
+                        )}
+                    </div>
+                )}
 
-                            <DivBotoes>
-                                <Botao 
-                                    type="button" 
-                                    background="var(--color-botao-terceira)" 
-                                    color="#333"
-                                    onClick={() => router.back()}
-                                    disabled={isLoading}
-                                >
-                                    Cancelar
-                                </Botao>
-                                <Botao type="submit" disabled={isLoading}>
-                                    {isLoading ? "Salvando..." : "Finalizar Atendimento"}
-                                </Botao>
-                            </DivBotoes>
-                        </>
-                    )}
-                </Formulario>
-            </DivFormulario>
-        </div>
+                {/* ===== ETAPA 2 — PRONTUÁRIO ===== */}
+                {step === 2 && paciente && (
+                    <Formulario
+                        initialValues={initialFormData}
+                        titulo={`📋 Prontuário • ${paciente.nomeCompleto} (ID ${paciente.id})`}
+                        onSubmit={() => {}}
+                    >
+                        {({ formData, handleChange }) => (
+                            <div className="space-y-8 max-w-5xl mx-auto">
+
+                                {/* 🧠 ANAMNESE */}
+                                <FieldGroup title="🧠 Anamnese">
+                                    <Textarea
+                                        name="queixa"
+                                        label="Queixa Principal"
+                                        value={formData.queixa}
+                                        onChange={handleChange}
+                                    />
+                                    <Textarea
+                                        name="historico"
+                                        label="Histórico"
+                                        value={formData.historico}
+                                        onChange={handleChange}
+                                    />
+                                </FieldGroup>
+
+                                {/* ⚖️ DADOS VITAIS */}
+                                <FieldGroup title="⚖️ Dados Vitais (Registrados)">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-3xl mx-auto">
+                                        <Campo
+                                            label="Peso (kg)"
+                                            value={paciente.peso ?? ""}
+                                            disabled
+                                        />
+                                        <Campo
+                                            label="Altura (cm)"
+                                            value={paciente.altura ?? ""}
+                                            disabled
+                                        />
+                                        <Campo
+                                            label="Pressão Arterial"
+                                            value={paciente.pressaoArterial ?? ""}
+                                            disabled
+                                        />
+                                    </div>
+                                </FieldGroup>
+
+                                {/* 🧾 DIAGNÓSTICO */}
+                                <FieldGroup title="🧾 Diagnóstico">
+                                    <Textarea
+                                        name="diagnostico"
+                                        value={formData.diagnostico}
+                                        onChange={handleChange}
+                                    />
+                                </FieldGroup>
+
+                                
+                                <DivBotoes className="justify-center flex-wrap gap-4">
+                                    <Botao>🧪 SOLICITAR EXAMES</Botao>
+                                    <Botao>💊 PREESCREVER RECEITAS</Botao>
+                                    <Botao>📝 ATRIBUIR ATESTADO</Botao>
+                                    <Botao>📚 VISUALIZAR HISTÓRICO</Botao>
+                                    <Botao>✅ FINALIZAR ATENDIMENTO</Botao>
+                                </DivBotoes>
+                            </div>
+                        )}
+                    </Formulario>
+                )}
+            </div>
+        </DivFormulario>
     );
 }
 
+/* =============================
+   EXPORT
+============================= */
 export default function CadastroProntuarioPage() {
     return (
-        <Suspense fallback={<div className="p-10 text-center">Carregando prontuário...</div>}>
-            <ProntuarioContent />
+        <Suspense fallback={<p>Carregando...</p>}>
+            <ProntuarioUX />
         </Suspense>
     );
 }

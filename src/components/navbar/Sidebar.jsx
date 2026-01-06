@@ -33,7 +33,9 @@ function Sidebar() {
                   </SidebarGroup>
 
                   <SidebarGroup title="PRONTUÁRIOS">
+                    <NavItem to="/prontuario" label="Cadastrar Prontuário" />
                     <NavItem to="/FiltroProntuario" label="Buscar Histórico" />
+
                   </SidebarGroup>
 
                   <SidebarGroup title="GERENCIAR UBS">
@@ -47,16 +49,16 @@ function Sidebar() {
                 <>
                   <NavItem to="/ProfissionalDeSaude" label="Início" />
                   
-                  {/* Link da Agenda Adicionado */}
+                  
                   <NavItem to="/ProfissionalDeSaude/agenda" label="Minha Agenda" />
                   
-                  {/* Corrigido: Aponta para a Fila que tem as abas de Recepção/Triagem */}
+                  
                   <NavItem to="/FiltroStatusPaciente" label="Fila de Atendimento" />
                   
-                  {/* Corrigido: Aponta para a busca de pacientes/histórico */}
+                  
                   <NavItem to="/PesquisaPaciente" label="Encontrar Pacientes" />
                   
-                  {/* Corrigido: Aponta para a página correta de Filtro/Visualização */}
+                  
                   <NavItem to="/FiltroProntuario" label="Histórico Prontuários" />
                 </>
               )}
@@ -66,6 +68,7 @@ function Sidebar() {
           {profile === "Paciente" && (
             <>
               <NavItem to="/Paciente" label="Painel do Paciente" />
+              
               <NavItem to="/Paciente/fila" label="Fila" />
             </>
           )}
