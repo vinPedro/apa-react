@@ -134,11 +134,12 @@ export default function HomePage() {
                     {({ formData, handleChange }) => (
                         <>
                             <Campo
-                                label="CPF/Identificador:"
-                                placeholder="CPF/Identificador"
+                                label="CPF/Identificador: "
+                                placeholder="XXXXXXXXXXX"
                                 name="login"
                                 value={formData.login || ""}
                                 type="text"
+                                maxLength={11}
                                 onChange={handleChange}
                                 error={errors.login}
                                 disabled={isLoading}

@@ -148,12 +148,12 @@ export default function ProfissionalCadastroForm() {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">CPF</label>
-                        <input type="text" name="cpf" value={formData.cpf} onChange={handleChange} required placeholder="Somente números" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" disabled={isLoading} />
+                        <input type="text" maxLength={11} name="cpf" value={formData.cpf} onChange={handleChange} required placeholder="Somente números" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" disabled={isLoading} />
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">CNS (Cartão Nacional de Saúde)</label>
-                        <input type="text" name="cns" value={formData.cns} onChange={handleChange} required placeholder="Somente números (15 dígitos)" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" disabled={isLoading} />
+                        <input type="text" maxLength={15} name="cns" value={formData.cns} onChange={handleChange} required placeholder="Somente números (15 dígitos)" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" disabled={isLoading} />
                     </div>
 
                     {/* Modal Conselho */}
@@ -167,7 +167,7 @@ export default function ProfissionalCadastroForm() {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Registro no Conselho</label>
-                        <input type="text" name="registroConselho" value={formData.registroConselho} onChange={handleChange} required placeholder="Número de registro" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" disabled={isLoading} />
+                        <input type="text" maxLength={11} name="registroConselho" value={formData.registroConselho} onChange={handleChange} required placeholder="Número de registro" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" disabled={isLoading} />
                     </div>
 
                     <div>
@@ -187,7 +187,7 @@ export default function ProfissionalCadastroForm() {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Telefone de Contato</label>
-                        <input type="tel" name="telefoneContato" value={formData.telefoneContato} onChange={handleChange} required placeholder="Somente números (ex: 83999999999)" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" disabled={isLoading} />
+                        <input type="tel" maxLength={11} name="telefoneContato" value={formData.telefoneContato} onChange={handleChange} required placeholder="Somente números (ex: 83999999999)" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" disabled={isLoading} />
                     </div>
 
                     <div>
