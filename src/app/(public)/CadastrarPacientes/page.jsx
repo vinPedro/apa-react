@@ -129,10 +129,10 @@ function FormularioInterno({ formData, handleChange, handleSelectChange, setForm
                 <div className="md:col-span-2">
                     <Campo label="Nome Completo:" name="nomeCompleto" value={formData.nomeCompleto} onChange={handleChange} error={errors.nomeCompleto} disabled={isLoading} />
                 </div>
-                <Campo label="CPF:" name="cpf" value={formData.cpf} onChange={handleChange} maxLength={14} error={errors.cpf} disabled={isLoading} />
-                <Campo label="CNS:" name="cns" value={formData.cns} onChange={handleChange} maxLength={15} disabled={isLoading} />
+                <Campo label="CPF:" name="cpf" maxLength={11} value={formData.cpf} onChange={handleChange} error={errors.cpf} disabled={isLoading} placeholder={"XXX XXX XXX XX"}/>
+                <Campo label="CNS:" name="cns" value={formData.cns} onChange={handleChange} maxLength={15} disabled={isLoading} placeholder={"XXXXX XXXXX XXXXX XXXXX"}/>
                 <Campo label="Data Nascimento:" name="dataNascimento" value={formData.dataNascimento} type="date" onChange={handleChange} disabled={isLoading} />
-                <Campo label="Telefone:" name="telefone" value={formData.telefone} onChange={handleChange} disabled={isLoading} />
+                <Campo type="tel" maxLength={11} label="Telefone:" name="telefone" value={formData.telefone} onChange={handleChange} disabled={isLoading} placeholder={"83999999999"}/>
                 
                 <ComboBox label="Sexo:" value={formData.sexo} onChange={(v) => handleSelectChange("sexo", v)} options={sexoOptions.map(op => ({ value: op.id, text: op.nome }))} disabled={isLoading} />
                 <ComboBox label="Raça/Cor:" value={formData.racacor} onChange={(v) => handleSelectChange("racacor", v)} options={racaOptions.map(op => ({ value: op.id, text: op.nome }))} disabled={isLoading} />

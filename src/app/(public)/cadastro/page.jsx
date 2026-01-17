@@ -129,8 +129,8 @@ function FormularioInterno({ formData, handleChange, handleSelectChange, setForm
             <Campo label="Nome Completo:" name="nomeCompleto" value={formData.nomeCompleto} onChange={handleChange} error={errors.nomeCompleto} disabled={isLoading} />
             
             <div className="flex flex-col sm:flex-row gap-4">
-                <Campo label="CNS:" name="cns" value={formData.cns} onChange={handleChange} type="number" disabled={isLoading} />
-                <Campo label="CPF:" name="cpf" value={formData.cpf} onChange={handleChange} type="number" error={errors.cpf} disabled={isLoading} />
+                <Campo label="CNS:" name="cns" value={formData.cns} onChange={handleChange} type="text" maxLength={15} disabled={isLoading} placeholder="XXXXX XXXXX XXXXX XXXXX"/>
+                <Campo label="CPF:" name="cpf" value={formData.cpf} onChange={handleChange} type="text" maxLength={15} error={errors.cpf} disabled={isLoading} placeholder="XXX XXX XXX XX"/>
             </div>
 
             <Campo label="Data Nascimento:" name="dataNascimento" value={formData.dataNascimento} type="date" onChange={handleChange} disabled={isLoading} />

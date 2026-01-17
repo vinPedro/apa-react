@@ -142,9 +142,10 @@ export default function UbsCadastroForm() {
                         <Campo 
                             label="CNPJ" 
                             name="cnpj" 
+                            maxLength={14}
                             value={formData.cnpj} 
                             onChange={handleChange} 
-                            placeholder="Ex: 12.345.678/0001-99"
+                            placeholder="Ex: 12345678000199"
                             error={errors.cnpj}
                             disabled={isLoading} 
                         />
