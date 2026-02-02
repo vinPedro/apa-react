@@ -252,7 +252,17 @@ function ProntuarioUX() {
 
                                 
                                 <DivBotoes className="justify-center flex-wrap gap-4">
-                                    <Botao>🧪 SOLICITAR EXAMES</Botao>
+                                    <Botao 
+                                        type="button"
+                                        onClick={() => {
+                                            // Navega para a pasta SolicitarExames passando os dados do paciente
+                                            router.push(`/SolicitarExame?pacienteId=${paciente.id}&nome=${encodeURIComponent(paciente.nomeCompleto)}`);
+                                        }}
+                                    >
+                                        🧪 SOLICITAR EXAMES
+                                    </Botao>
+
+                                    {/* Outros botões permanecem iguais */}
                                     <Botao>💊 PREESCREVER RECEITAS</Botao>
                                     <Botao>📝 ATRIBUIR ATESTADO</Botao>
                                     <Botao>📚 VISUALIZAR HISTÓRICO</Botao>

@@ -30,6 +30,7 @@ function Sidebar() {
                     <NavItem to="/CadastrarPacientes" label="Cadastrar Paciente" />
                     <NavItem to="/PesquisaPaciente" label="Buscar Pacientes" />
                     <NavItem to="/FiltroStatusPaciente" label="Fila / Status" />
+                    <NavItem to="/RecuperarExames" label="Recuperar Exames" />
                   </SidebarGroup>
 
                   <SidebarGroup title="PRONTUÁRIOS">
@@ -60,6 +61,8 @@ function Sidebar() {
                   
                   
                   <NavItem to="/FiltroProntuario" label="Histórico Prontuários" />
+
+                   <NavItem to="/onboarding" label="TV / Painel" />
                 </>
               )}
             </>
