@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useAuth } from "@/AuthContext";
@@ -13,10 +13,8 @@ function PainelChamadaUX() {
     useEffect(() => {
         const vincularUBS = async () => {
             if (!token || !isAuthenticated) return;
-
             try {
                 const decoded = jwtDecode(token);
-                // CPF vindo do token (limpando pontuação)
                 const cpfToken = decoded.sub ? decoded.sub.replace(/\D/g, "") : null;
 
                 const res = await fetch('http://localhost:8080/api/profissionais', {
@@ -25,72 +23,75 @@ function PainelChamadaUX() {
 
                 if (res.ok) {
                     const profissionais = await res.json();
-                    
-                    // Busca o profissional pelo CPF
                     const prof = profissionais.find(p => p.cpf?.replace(/\D/g, "") === cpfToken);
 
                     if (prof) {
-                        // AJUSTE DEFINITIVO BASEADO NO SEU JSON:
-                        // O campo correto é ubsVinculadaId
                         const idUBS = prof.ubsVinculadaId;
-                        const nomeUBS = prof.nomeCompleto ? `UNIDADE - ${prof.nomeCompleto}` : "UNIDADE DE SAÚDE";
-
                         if (idUBS) {
-                            setInfo({ 
-                                unidadeId: idUBS, 
-                                unidadeNome: nomeUBS 
-                            });
+                            setInfo({ unidadeId: idUBS });
                             setStatus("pronto");
                         } else {
-                            setStatus("ubs_id_nulo_no_json");
+                            setStatus("ubs_id_nulo");
                         }
                     } else {
                         setStatus("cpf_nao_encontrado");
                     }
                 } else {
-                    setStatus("erro_servidor_api");
+                    setStatus("erro_servidor");
                 }
             } catch (error) {
-                console.error("Erro técnico:", error);
                 setStatus("erro_tecnico");
             }
         };
-
         vincularUBS();
     }, [token, isAuthenticated]);
 
-    if (status === "carregando") return <div className="min-h-screen bg-black flex items-center justify-center text-blue-500 font-mono animate-pulse uppercase">Iniciando Sistema...</div>;
+    if (status === "carregando") return <div className="h-screen bg-black flex items-center justify-center text-blue-500 font-mono text-xs animate-pulse uppercase">Iniciando...</div>;
 
     if (status !== "pronto") return (
-        <div className="min-h-screen bg-black flex flex-col items-center justify-center p-10 font-mono text-red-500 border-4 border-red-900 text-center">
-            <h2 className="text-2xl font-bold mb-4">ERRO DE IDENTIFICAÇÃO</h2>
-            <p className="p-4 bg-red-900/20 border border-red-500">MOTIVO: {status.toUpperCase()}</p>
-            <p className="mt-4 text-gray-400 text-sm">Verifique se o CPF no cadastro do profissional está correto.</p>
+        <div className="h-screen bg-black flex flex-col items-center justify-center p-4 font-mono text-red-500 text-center">
+            <p className="text-xs p-2 border border-red-500 uppercase font-bold tracking-tighter">ERRO: {status}</p>
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-[#020408] flex flex-col items-center justify-center p-4">
-            {/* Cabeçalho */}
-            <div className="w-full max-w-[1100px] flex justify-between items-end mb-10 p-8 bg-slate-900/40 border-b-4 border-blue-600 rounded-2xl shadow-2xl">
-                <div>
-                    <p className="text-blue-500 text-xs font-bold uppercase tracking-widest mb-2">Painel de Chamadas Profissional</p>
-                    <h1 className="text-white text-5xl font-black italic uppercase tracking-tighter">
-                        UBS ID: {info.unidadeId}
+        <div className="h-screen bg-[#010204] flex flex-col overflow-hidden">
+            {/* Cabeçalho Ultra Compacto */}
+            <header className="w-full bg-slate-950 border-b border-blue-900/50 px-4 py-2 flex justify-between items-center shadow-lg">
+                <div className="flex items-center gap-3">
+                    <div className="h-2 w-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
+                    <h1 className="text-white text-sm font-bold tracking-tight">
+                        UBS <span className="text-blue-500">ID {info.unidadeId}</span>
                     </h1>
                 </div>
-                <div className="text-white font-mono text-4xl font-bold opacity-60 italic">
-                    {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                
+                <div className="flex items-center gap-4">
+                    <span className="text-slate-400 font-mono text-[11px] uppercase tracking-widest">
+                        {new Date().toLocaleDateString('pt-BR')}
+                    </span>
+                    <span className="text-white font-mono text-sm font-black bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                        {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                 </div>
-            </div>
+            </header>
 
-            {/* Container da TV */}
-            <div className="relative">
-                <div className="absolute -inset-20 bg-blue-600/5 blur-[120px] rounded-full pointer-events-none"></div>
-                <div className="relative bg-black border-[16px] border-slate-900 rounded-[3.5rem] shadow-2xl overflow-hidden" style={{ width: '460px', height: '660px' }}>
-                    <TvPanel unidadeId={info.unidadeId} />
+            {/* Container da TV - Reduzido para caber no viewport */}
+            <main className="flex-1 relative flex items-center justify-center p-3 bg-gradient-to-b from-[#020408] to-black">
+                {/* Glow de fundo mais discreto */}
+                <div className="absolute inset-0 bg-blue-600/5 blur-[80px] pointer-events-none"></div>
+                
+                {/* Frame da "TV" - Layout Notebook */}
+                <div className="relative w-full max-w-[800px] h-full max-h-[82vh] bg-black border-[6px] border-slate-900 rounded-[1.5rem] shadow-2xl overflow-hidden ring-1 ring-blue-900/20">
+                    <div className="w-full h-full relative">
+                        <TvPanel unidadeId={info.unidadeId} />
+                    </div>
                 </div>
-            </div>
+            </main>
+
+            {/* Footer Minimalista (Opcional) */}
+            <footer className="px-4 py-1 bg-black text-right">
+                <span className="text-[9px] text-slate-600 font-mono uppercase tracking-[0.2em]">SISTEMA APA v3.0</span>
+            </footer>
         </div>
     );
 }

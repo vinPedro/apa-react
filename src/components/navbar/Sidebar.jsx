@@ -73,6 +73,8 @@ function Sidebar() {
               <NavItem to="/Paciente" label="Painel do Paciente" />
               
               <NavItem to="/Paciente/fila" label="Fila" />
+
+               <NavItem to="/RecuperarExames" label="Recuperar Exames" />
             </>
           )}
 
