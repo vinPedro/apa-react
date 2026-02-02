@@ -136,7 +136,10 @@ function FormularioInterno({ formData, handleChange, handleSelectChange, setForm
             <Campo label="Data Nascimento:" name="dataNascimento" value={formData.dataNascimento} type="date" onChange={handleChange} disabled={isLoading} />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <ComboBox label="Sexo:" value={formData.sexo} onChange={(v) => handleSelectChange("sexo", v)} options={sexoOptions.map(op => ({ value: op.id, text: op.nome }))} disabled={isLoading} />
+                <ComboBox 
+                label="Sexo:" value={formData.sexo} 
+                onChange={(v) => handleSelectChange("sexo", v)} options={sexoOptions.map(op => ({ value: op.id, text: op.nome }))} 
+                disabled={isLoading} />
                 <ComboBox label="Raça/Cor:" value={formData.racacor} onChange={(v) => handleSelectChange("racacor", v)} options={racaOptions.map(op => ({ value: op.id, text: op.nome }))} disabled={isLoading} />
             </div>
 

@@ -24,7 +24,7 @@ export default function ComboBox({ label, name, options = [], value, onChange })
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="border border-foreground rounded-sm px-2 py-1 text-left"
+        className="border border-foreground rounded-sm px-2 py-2 text-left"
       >
         {displayText}
       </button>

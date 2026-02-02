@@ -17,6 +17,13 @@ const sexoOptions = [
     { id: "INDETERMINADO", nome: "Indeterminado" },
 ];
 
+//Conexção com o back necessaria, para recuperar a UBSs salvas no banco
+const unidadeSaude = [
+    { id: 1, nome: "UBS1" },
+    { id: 2, nome: "UBS2" },
+    { id: 3, nome: "UBS3" },
+];
+
 const racaOptions = [
     { id: "BRANCA", nome: "Branca" },
     { id: "PRETA", nome: "Preta" },
@@ -165,7 +172,11 @@ function FormularioInterno({ formData, handleChange, handleSelectChange, setForm
                     <Campo label="E-mail (Login):" name="email" type="email" value={formData.email} onChange={handleChange} disabled={isLoading} />
                     <Campo label="Senha:" name="senha" type="password" value={formData.senha} onChange={handleChange} disabled={isLoading} />
                     <div className="md:col-span-2">
-                        <Campo label="ID da UBS Vinculada:" name="unidadeSaudeId" value={formData.unidadeSaudeId} type="number" onChange={handleChange} disabled={isLoading} />
+                        <ComboBox
+                            label={"UBS:"}
+                            value={formData.unidadeSaudeId}
+                            onChange={(v) => handleSelectChange("unidadeSaudeId", v)} options={unidadeSaude.map(op => ({ value: op.id, text: op.nome }))}
+                        />
                     </div>
                 </div>
             </div>

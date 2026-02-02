@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/AuthContext';
+import ComboBox from '../ComboBox';
 import AlertMessage from '@/components/AlertMessage'; // <-- Importação
 
 const MOCK_CONSELHOS = [
@@ -12,6 +13,13 @@ const MOCK_CONSELHOS = [
     { id: "CRF", nome: "CRF - Conselho Regional de Farmácia" },
     { id: "CREFITO", nome: "CREFITO - Conselho Regional de Fisioterapia e Terapia Ocupacional" },
     { id: "OUTRO", nome: "OUTRO" },
+];
+
+//Conexção com o back necessaria, para recuperar a UBSs salvas no banco
+const unidadeSaude = [
+    { id: 1, nome: "UBS1" },
+    { id: 2, nome: "UBS2" },
+    { id: 3, nome: "UBS3" },
 ];
 
 export default function ProfissionalCadastroForm() {
@@ -51,6 +59,13 @@ export default function ProfissionalCadastroForm() {
         }));
         setIsModalOpen(false);
     };
+
+    function handleSelectChange(name, value) {
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -176,8 +191,11 @@ export default function ProfissionalCadastroForm() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">ID da UBS Vinculada</label>
-                        <input type="number" name="ubsVinculadaId" value={formData.ubsVinculadaId} onChange={handleChange} required placeholder="Digite o ID da UBS (ex: 1)" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" disabled={isLoading} />
+                        <ComboBox className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                            label={"UBS:"}
+                            value={formData.unidadeSaudeId}
+                            onChange={(v) => handleSelectChange("unidadeSaudeId", v)} options={unidadeSaude.map(op => ({ value: op.id, text: op.nome }))}
+                            />
                     </div>
 
                     <div>

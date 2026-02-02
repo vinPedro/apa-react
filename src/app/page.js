@@ -160,17 +160,6 @@ export default function HomePage() {
                                 {isLoading ? "Entrando..." : "Entrar"}
                             </Botao>
 
-                            <Link href="/cadastro">
-                                <Botao
-                                    maximo={700}
-                                    background="var(--color-botao-terceira)"
-                                    color="var(--color-text-botao-secundaria)"
-                                    disabled={isLoading}
-                                    type="button"
-                                >
-                                    Cadastrar-se
-                                </Botao>
-                            </Link>
                         </>
                     )}
                 </Formulario>
