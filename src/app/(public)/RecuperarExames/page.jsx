@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/AuthContext";
-import { jwtDecode } from "jwt-decode"; // Certifique-se de ter instalado: npm install jwt-decode
+import { jwtDecode } from "jwt-decode"; 
 
 import DivFormulario from "@/components/DivFormulario";
 import DivBotoes from "@/components/DivBotoes";
@@ -36,7 +36,6 @@ function MeusExamesUX() {
 
                 // CENÁRIO 1: Médico acessando pelo ID (URL)
                 if (pacienteIdURL) {
-                    // Primeiro, precisamos descobrir o CPF desse paciente usando o ID
                     const resPaciente = await fetch(`http://localhost:8080/api/pacientes/${pacienteIdURL}`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
@@ -46,9 +45,8 @@ function MeusExamesUX() {
                     }
                     
                     const dadosPaciente = await resPaciente.json();
-                    cpfParaBusca = dadosPaciente.cpf; // Assume que o DTO retorna o campo 'cpf'
+                    cpfParaBusca = dadosPaciente.cpf; 
                     
-                    // Atualiza o nome se não veio na URL
                     if (!pacienteNomeURL && dadosPaciente.nomeCompleto) {
                         setNomePacienteDisplay(dadosPaciente.nomeCompleto);
                     }
@@ -57,10 +55,8 @@ function MeusExamesUX() {
                 // CENÁRIO 2: Paciente acessando seus próprios exames
                 else if (profile === "Paciente") {
                     const decoded = jwtDecode(token);
-                    // O 'sub' do token geralmente é o login (CPF)
                     cpfParaBusca = decoded.sub; 
                 } else {
-                    // Se não tem ID na URL e não é paciente logado
                     setLoading(false);
                     return;
                 }
@@ -69,7 +65,7 @@ function MeusExamesUX() {
                     throw new Error("CPF não identificado para busca.");
                 }
 
-                // Agora buscamos os exames usando o CPF (como o Controller exige)
+                // Busca os exames
                 const response = await fetch(`http://localhost:8080/api/exames/paciente/${cpfParaBusca}`, {
                     method: "GET",
                     headers: { 
@@ -133,13 +129,31 @@ function MeusExamesUX() {
                                             <span className="text-sm text-gray-400">
                                                 📅 {ex.dataSolicitacao ? new Date(ex.dataSolicitacao).toLocaleDateString() : 'Data N/A'}
                                             </span>
+                                            {/* Exibição do Status */}
+                                            <span className={`text-xs px-2 py-0.5 rounded border ${
+                                                ex.status === 'PENDENTE' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 
+                                                'bg-green-50 text-green-700 border-green-200'
+                                            }`}>
+                                                {ex.status || 'STATUS N/A'}
+                                            </span>
                                         </div>
+
+                                        {/* Correção: Usando 'tipoExame' ao invés de 'descricaoExame' */}
                                         <h3 className="text-lg font-semibold text-gray-800 uppercase">
-                                            {ex.descricaoExame}
+                                            {ex.tipoExame || 'Exame Sem Nome'}
                                         </h3>
+
+                                        {/* Correção: Usando 'descricao' ao invés de 'motivoSolicitacao' */}
                                         <p className="text-sm text-gray-600 mt-2 italic">
-                                            <span className="font-medium not-italic text-gray-500">Motivo:</span> {ex.motivoSolicitacao}
+                                            <span className="font-medium not-italic text-gray-500">Motivo/Detalhes:</span> {ex.descricao || 'Sem observações.'}
                                         </p>
+
+                                        {/* Exibição da Prioridade se existir */}
+                                        {ex.prioridade && (
+                                            <p className="text-xs text-red-500 font-bold mt-1 uppercase">
+                                                Prioridade: {ex.prioridade}
+                                            </p>
+                                        )}
                                     </div>
 
                                     <div className="flex gap-2 w-full md:w-auto">
