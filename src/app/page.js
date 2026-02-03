@@ -8,7 +8,7 @@ import DivFormulario from "@/components/DivFormulario";
 import Formulario from "@/components/Formulario";
 import Link from "next/link";
 import PrimeiroAdminForm from '../components/forms/PrimeiroAdminForm.jsx';
-import AlertMessage from '@/components/AlertMessage'; // <-- Importação
+import AlertMessage from '@/components/AlertMessage';
 
 // ----------------------------------------------------
 // FUNÇÃO DE VERIFICAÇÃO DE STATUS
@@ -17,7 +17,7 @@ const checkAdminStatus = async () => {
     try {
         const timestamp = Date.now();
         const url = `/api/setup/status?t=${timestamp}`;
-       
+        
         const response = await fetch(url, {
             cache: 'no-store', 
         });
@@ -46,8 +46,6 @@ export default function HomePage() {
     // --- ESTADOS E FUNÇÕES DO LOGIN DIÁRIO (USUÁRIO) ---
     const [errors, setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
-    
-    // Estado unificado para alertas (Erro ou Sucesso)
     const [alert, setAlert] = useState(null);
 
     // --- LÓGICA DO SETUP ---
@@ -78,13 +76,12 @@ export default function HomePage() {
     const handleSubmit = async (data) => {
         const validationErrors = validate(data);
         setErrors(validationErrors);
-        setAlert(null); // Limpa alertas anteriores
+        setAlert(null); 
 
         if (Object.keys(validationErrors).length === 0) {
             setIsLoading(true);
             try {
                 await login(data.login, data.senha);
-                // O redirecionamento acontece dentro do login(), se falhar cai no catch
             } catch (error) {
                 setAlert({ message: error.message || "Falha no login. Verifique suas credenciais.", variant: "error" });
             } finally {
@@ -95,28 +92,29 @@ export default function HomePage() {
         }
     };
 
-    // --- RENDERIZAÇÃO CONDICIONAL ---
-    
+    const bgContainer = "flex flex-col justify-center items-center min-h-screen w-full p-6 bg-slate-950";
+
     if (verifying) {
         return (
-            <div className="flex justify-center items-center min-h-screen w-full p-4">
-                <p className="text-xl text-blue-500">Verificando status inicial do sistema...</p>
+            <div className={bgContainer}>
+                <p className="text-xl text-blue-400 animate-pulse font-medium">Iniciando sistema...</p>
             </div>
         );
     }
 
     if (needsSetup) {
         return (
-            <div className="flex justify-center items-center min-h-screen w-full p-4">
-                <PrimeiroAdminForm onCadastroSucesso={handleSetupSuccess} />
+            <div className={bgContainer}>
+                <div className="bg-white p-10 rounded-[2rem] shadow-2xl w-full max-w-lg text-slate-900">
+                    <PrimeiroAdminForm onCadastroSucesso={handleSetupSuccess} />
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="flex justify-center items-center min-h-screen w-full p-4">
+        <div className={bgContainer}>
             
-            {/* Componente AlertMessage */}
             {alert && (
                 <AlertMessage 
                     message={alert.message} 
@@ -125,49 +123,55 @@ export default function HomePage() {
                 />
             )}
 
-            <DivFormulario>
-                <Formulario
-                    initialValues={{ senha: "", login: "" }}
-                    titulo="Assistente de Pronto Atendimento"
-                    onSubmit={handleSubmit}
-                >
-                    {({ formData, handleChange }) => (
-                        <>
-                            <Campo
-                                label="CPF/Identificador: "
-                                placeholder="XXXXXXXXXXX"
-                                name="login"
-                                value={formData.login || ""}
-                                type="text"
-                                maxLength={11}
-                                onChange={handleChange}
-                                error={errors.login}
-                                disabled={isLoading}
-                            />
+            {/* PAINEL BRANCO: max-w-lg (512px) é o equilíbrio perfeito para formulários */}
+            <div className="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-2xl w-full max-w-lg transition-all">
+                <DivFormulario>
+                    <Formulario
+                        initialValues={{ senha: "", login: "" }}
+                        titulo="ASSISTENTE DE PRONTO ATENDIMENTO"
+                        onSubmit={handleSubmit}
+                    >
+                        {({ formData, handleChange }) => (
+                            <div className="space-y-4">
+                                <Campo
+                                    label="CPF/Identificador: "
+                                    placeholder="XXXXXXXXXXX"
+                                    name="login"
+                                    value={formData.login || ""}
+                                    type="text"
+                                    maxLength={11}
+                                    onChange={handleChange}
+                                    error={errors.login}
+                                    disabled={isLoading}
+                                />
 
-                            <Campo
-                                label="Senha:"
-                                placeholder="senha"
-                                name="senha"
-                                value={formData.senha || ""}
-                                type="password"
-                                onChange={handleChange}
-                                error={errors.senha}
-                                disabled={isLoading}
-                            />
+                                <Campo
+                                    label="Senha:"
+                                    placeholder="Sua senha"
+                                    name="senha"
+                                    value={formData.senha || ""}
+                                    type="password"
+                                    onChange={handleChange}
+                                    error={errors.senha}
+                                    disabled={isLoading}
+                                />
 
-                            <Botao maximo={700} disabled={isLoading}>
-                                {isLoading ? "Entrando..." : "Entrar"}
-                            </Botao>
+                                <div className="pt-2">
+                                    <Botao maximo={1000} disabled={isLoading}>
+                                        {isLoading ? "Entrando..." : "Entrar"}
+                                    </Botao>
+                                </div>
+                            </div>
+                        )}
+                    </Formulario>
 
-                        </>
-                    )}
-                </Formulario>
-
-                <Link href="/senha" className="text-center text-primaria">
-                    Esqueci minha senha
-                </Link>
-            </DivFormulario>
+                    <div className="flex justify-center mt-6">
+                        <Link href="/senha" className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+                            Esqueci minha senha
+                        </Link>
+                    </div>
+                </DivFormulario>
+            </div>
         </div>
     );
 }

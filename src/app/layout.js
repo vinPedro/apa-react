@@ -4,7 +4,7 @@ import { AuthProvider } from "../AuthContext";
 import ClientLayoutWrapper from "@/components/Layout/ClientLayoutWrapper";
 
 export const metadata = {
-  title: "Assistente de Pronto Atendimento",
+  title: "ASSISTENTE DE PRONTO ATENDIMENTO",
   description: "Sistema APA",
 };
 

@@ -52,6 +52,8 @@ function Sidebar() {
                   
                   
                   <NavItem to="/ProfissionalDeSaude/agenda" label="Minha Agenda" />
+
+                  <NavItem to="/CadastrarPacientes" label="Cadastrar Paciente" />
                   
                   
                   <NavItem to="/FiltroStatusPaciente" label="Fila de Atendimento" />
@@ -72,9 +74,15 @@ function Sidebar() {
             <>
               <NavItem to="/Paciente" label="Painel do Paciente" />
               
-              <NavItem to="/Paciente/fila" label="Fila" />
+              <NavItem to="/Paciente/fila" label="Pegar Ficha-FILA" />
 
                <NavItem to="/RecuperarExames" label="Recuperar Exames" />
+
+                <NavItem to="/" label="Histórico de Consultas" />
+
+                <NavItem to="/" label="Atestados" />
+
+                <NavItem to="/" label="Medicamentos Atribuidos" />
             </>
           )}
 
