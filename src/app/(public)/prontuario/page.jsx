@@ -38,7 +38,8 @@ function ProntuarioUX() {
     const [alert, setAlert] = useState(null);
     const [loading, setLoading] = useState(false);
 
-    const [initialFormData] = useState({
+    // ALTERAÇÃO 1: Adicionado 'setInitialFormData' para poder atualizar com o rascunho
+    const [initialFormData, setInitialFormData] = useState({
         queixa: "",
         historico: "",
         diagnostico: "",
@@ -69,9 +70,6 @@ function ProntuarioUX() {
             
             // Tenta garantir o CPF
             let cpfPaciente = dados.pacienteCpf || dados.cpfPaciente;
-            
-            // Se o backend não mandou o CPF no DTO de atendimento, buscamos no cadastro do paciente
-            // Usamos o pacienteIdURL como fallback se o DTO falhar
             const idPacienteFinal = dados.pacienteId || pacienteIdURL;
 
             if (!cpfPaciente && idPacienteFinal) {
@@ -87,14 +85,25 @@ function ProntuarioUX() {
             }
 
             setPaciente({
-                id: idPacienteFinal, // Usa o ID garantido
+                id: idPacienteFinal, 
                 cpf: cpfPaciente,
-                nomeCompleto: dados.pacienteNome || "Paciente", // Evita crash se nome vier nulo
+                nomeCompleto: dados.pacienteNome || "Paciente",
                 peso: dados.peso,
                 altura: dados.altura,
                 pressaoArterial: dados.pressaoArterial,
                 atendimentoId: idAtendimento
             });
+
+            // ALTERAÇÃO 2: Verificar se existe rascunho salvo para este atendimento
+            if (idAtendimento) {
+                const rascunho = localStorage.getItem(`rascunho_prontuario_${idAtendimento}`);
+                if (rascunho) {
+                    const dadosSalvos = JSON.parse(rascunho);
+                    setInitialFormData((prev) => ({ ...prev, ...dadosSalvos }));
+                    console.log("Rascunho recuperado:", dadosSalvos);
+                }
+            }
+
             setStep(2);
         } catch (error) {
             setAlert({ message: error.message, variant: "error" });
@@ -105,12 +114,11 @@ function ProntuarioUX() {
 
     // --- AÇÃO DO BOTÃO "SOLICITAR EXAME" ---
     const irParaExames = () => {
-        // Tenta pegar o CPF do paciente carregado
         const cpfParaUsar = paciente?.cpf;
         const nomeParaUsar = paciente?.nomeCompleto || "Paciente";
 
         if (cpfParaUsar) {
-            // Passa o CPF na URL em vez de (ou junto com) o ID
+            // O dado já foi salvo automaticamente no 'onChange', então só redireciona
             router.push(`/SolicitarExame?cpf=${cpfParaUsar}&nome=${encodeURIComponent(nomeParaUsar)}`);
         } else {
             setAlert({ message: "Erro: CPF do paciente não identificado.", variant: "error" });
@@ -119,7 +127,6 @@ function ProntuarioUX() {
 
     // --- BUSCAR HISTÓRICO ---
     const handleVisualizarHistorico = async () => {
-        // Tenta pegar CPF do estado, se não tiver, tenta buscar pelo ID da URL (caso extremo)
         if (!paciente?.cpf) {
              setAlert({ message: "CPF do paciente não identificado ainda. Aguarde carregamento.", variant: "warning" });
              return;
@@ -151,10 +158,14 @@ function ProntuarioUX() {
 
     const handleOpenDetail = (p) => {
         setSelectedProntuario({
+            dataHoraFinalizacao: p.dataHoraFinalizacao, // Passa o campo correto para o modal
             data: p.dataHoraFinalizacao ? new Date(p.dataHoraFinalizacao).toLocaleDateString() : '---',
-            medico: 'Médico Responsável', 
-            anamnese: `Queixa: ${p.queixaPrincipal}\nHistórico: ${p.historicoDoenca}`,
+            nomeMedico: p.nomeMedico,
+            medico: p.nomeMedico || 'Médico Responsável', 
+            queixaPrincipal: p.queixaPrincipal,
+            historicoDoenca: p.historicoDoenca,
             diagnostico: p.diagnostico,
+            prescricaoMedica: p.prescricaoMedica,
             medicamentos: p.prescricaoMedica ? [p.prescricaoMedica] : [],
             exames: p.examesSolicitados ? [p.examesSolicitados] : []
         });
@@ -168,7 +179,7 @@ function ProntuarioUX() {
                 method: "POST",
                 headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
                 body: JSON.stringify({
-                    atendimentoId: Number(atendimentoIdURL), // Usa direto da URL para garantir
+                    atendimentoId: Number(atendimentoIdURL),
                     pacienteId: Number(paciente?.id || pacienteIdURL),
                     queixaPrincipal: values.queixa,
                     historicoDoenca: values.historico,
@@ -176,6 +187,12 @@ function ProntuarioUX() {
                 }),
             });
             if (!response.ok) throw new Error("Erro ao salvar prontuário.");
+            
+            // ALTERAÇÃO 3: Limpar o rascunho após sucesso
+            if (atendimentoIdURL) {
+                localStorage.removeItem(`rascunho_prontuario_${atendimentoIdURL}`);
+            }
+
             setAlert({ message: "Prontuário salvo!", variant: "success" });
             setTimeout(() => router.push("/ProfissionalDeSaude"), 1500);
         } catch (error) {
@@ -185,7 +202,7 @@ function ProntuarioUX() {
         }
     };
 
-    // Busca de paciente avulsa (mantida)
+    // Busca de paciente avulsa
     useEffect(() => {
         if (!nomeBusca || nomeBusca.length < 3 || atendimentoIdURL) {
             setPacientes([]); return;
@@ -255,46 +272,75 @@ function ProntuarioUX() {
 
                 {step === 2 && (
                     <Formulario initialValues={initialFormData} titulo={`📋 ${paciente?.nomeCompleto || "Carregando..."}`} onSubmit={handleFinalizar}>
-                        {({ formData, handleChange }) => (
-                            <div className="space-y-6">
-                                <FieldGroup title="Anamnese">
-                                    <Textarea name="queixa" label="Queixa" value={formData.queixa} onChange={handleChange} />
-                                    <Textarea name="historico" label="Histórico" value={formData.historico} onChange={handleChange} />
-                                </FieldGroup>
-                                <FieldGroup title="Dados Vitais">
-                                    <div className="flex gap-4">
-                                        <Campo label="Peso" value={paciente?.peso || '-'} disabled />
-                                        <Campo label="Pressão" value={paciente?.pressaoArterial || '-'} disabled />
-                                    </div>
-                                </FieldGroup>
-                                <FieldGroup title="Diagnóstico">
-                                    <Textarea name="diagnostico" value={formData.diagnostico} onChange={handleChange} />
-                                </FieldGroup>
-                                <DivBotoes className="flex-wrap gap-2 justify-center">
-                                    
-                                    {/* BOTÃO AGORA CHAMA FUNÇÃO QUE VERIFICA URL COMO FALLBACK */}
-                                    <Botao 
-                                        type="button" 
-                                        onClick={irParaExames} 
-                                        className="bg-blue-600 hover:bg-blue-700"
-                                    >
-                                        🧪 SOLICITAR EXAMES
-                                    </Botao>
-                                    
-                                    <Botao 
-                                        type="button" 
-                                        onClick={handleVisualizarHistorico} 
-                                        className="bg-purple-600 hover:bg-purple-700"
-                                    >
-                                        📚 HISTÓRICO
-                                    </Botao>
-                                    
-                                    <Botao type="submit" className="bg-green-600 hover:bg-green-700" disabled={loading}>
-                                        {loading ? "Salvando..." : "FINALIZAR"}
-                                    </Botao>
-                                </DivBotoes>
-                            </div>
-                        )}
+                        {({ formData, handleChange }) => {
+                            
+                            // ALTERAÇÃO 4: Função Helper para salvar no localStorage a cada mudança
+                            const handleChangeComSave = (e) => {
+                                handleChange(e); // Chama o original do Formulario
+                                
+                                // Salva no LocalStorage
+                                if (atendimentoIdURL) {
+                                    const key = `rascunho_prontuario_${atendimentoIdURL}`;
+                                    const saved = JSON.parse(localStorage.getItem(key) || '{}');
+                                    saved[e.target.name] = e.target.value;
+                                    localStorage.setItem(key, JSON.stringify(saved));
+                                }
+                            };
+
+                            return (
+                                <div className="space-y-6">
+                                    <FieldGroup title="Anamnese">
+                                        <Textarea 
+                                            name="queixa" 
+                                            label="Queixa" 
+                                            value={formData.queixa} 
+                                            onChange={handleChangeComSave} // Usa a nova função
+                                        />
+                                        <Textarea 
+                                            name="historico" 
+                                            label="Histórico" 
+                                            value={formData.historico} 
+                                            onChange={handleChangeComSave} // Usa a nova função
+                                        />
+                                    </FieldGroup>
+                                    <FieldGroup title="Dados Vitais">
+                                        <div className="flex gap-4">
+                                            <Campo label="Peso" value={paciente?.peso || '-'} disabled />
+                                            <Campo label="Pressão" value={paciente?.pressaoArterial || '-'} disabled />
+                                        </div>
+                                    </FieldGroup>
+                                    <FieldGroup title="Diagnóstico">
+                                        <Textarea 
+                                            name="diagnostico" 
+                                            value={formData.diagnostico} 
+                                            onChange={handleChangeComSave} // Usa a nova função
+                                        />
+                                    </FieldGroup>
+                                    <DivBotoes className="flex-wrap gap-2 justify-center">
+                                        
+                                        <Botao 
+                                            type="button" 
+                                            onClick={irParaExames} 
+                                            className="bg-blue-600 hover:bg-blue-700"
+                                        >
+                                            🧪 SOLICITAR EXAMES
+                                        </Botao>
+                                        
+                                        <Botao 
+                                            type="button" 
+                                            onClick={handleVisualizarHistorico} 
+                                            className="bg-purple-600 hover:bg-purple-700"
+                                        >
+                                            📚 HISTÓRICO
+                                        </Botao>
+                                        
+                                        <Botao type="submit" className="bg-green-600 hover:bg-green-700" disabled={loading}>
+                                            {loading ? "Salvando..." : "FINALIZAR"}
+                                        </Botao>
+                                    </DivBotoes>
+                                </div>
+                            );
+                        }}
                     </Formulario>
                 )}
             </div>

@@ -4,34 +4,27 @@ import styles from './ProntuarioModal.module.css';
 
 export default function ProntuarioModal({ prontuario, onClose }) {
   
-  
+  // Função auxiliar para formatar data
+  const formatarData = (data) => {
+    if (!data) return 'Data não informada';
+    // Tenta criar data se for string ISO (ex: do Java)
+    const dataObj = new Date(data);
+    return isNaN(dataObj) ? data : dataObj.toLocaleDateString('pt-BR');
+  };
 
   const handleExibirExames = () => {
     console.log('Ação: Abrir visualizador de exames para:', prontuario.exames);
-    
-    // ⬇️⬇️⬇️ CONEXÃO OPCIONAL COM O BACKEND (EXAMES) ⬇️⬇️⬇️
-    // Se quiser exibir os exames em um NOVO modal:
-    // 1. Implemente a lógica para buscar os detalhes completos dos exames (se necessário).
-    // 2. Abra um novo modal de 'ExamesDetalhes' passando 'prontuario.exames'.
-    // alert('Ação simulada: Exibir Exames');
-    // ⬆️⬆️⬆️ FIM DA CONEXÃO OPCIONAL ⬆️⬆️⬆️
+    // Lógica opcional mantida
   };
 
   const handleExibirMedicamentos = () => {
     console.log('Ação: Abrir visualizador de medicamentos para:', prontuario.medicamentos);
-
-    // ⬇️⬇️⬇️ CONEXÃO OPCIONAL COM O BACKEND (MEDICAMENTOS) ⬇️⬇️⬇️
-    // Se quiser exibir os medicamentos em um NOVO modal:
-    // 1. Implemente a lógica para buscar os detalhes completos dos medicamentos (se necessário).
-    // 2. Abra um novo modal de 'MedicamentosDetalhes' passando 'prontuario.medicamentos'.
-    // alert('Ação simulada: Exibir Medicamentos');
-    // ⬆️⬆️⬆️ FIM DA CONEXÃO OPCIONAL ⬆️⬆️⬆️
+    // Lógica opcional mantida
   };
 
   return (
     <div className={styles.overlay}>
       <div className={styles.modalContent}>
-        
         
         <div className={styles.header}>
             <h3>Prontuário de Atendimento</h3>
@@ -40,27 +33,56 @@ export default function ProntuarioModal({ prontuario, onClose }) {
         <hr className={styles.divider}/>
         
         <div className={styles.metaData}>
-            <p><strong>📅 Data do Atendimento:</strong> {prontuario.data}</p>
-            <p><strong>🧑‍⚕️ Médico(a):</strong> {prontuario.medico}</p>
+            {/* Suporta 'dataHoraFinalizacao' (DTO novo) ou 'data' (antigo) */}
+            <p><strong>📅 Data do Atendimento:</strong> {formatarData(prontuario.dataHoraFinalizacao || prontuario.data)}</p>
+            {/* Suporta 'nomeMedico' (DTO novo) ou 'medico' (antigo) */}
+            <p><strong>🧑‍⚕️ Médico(a):</strong> {prontuario.nomeMedico || prontuario.medico || 'Não identificado'}</p>
         </div>
         
+        {/* CORREÇÃO 1: Queixa Principal (Dados reais do DTO) */}
         <div className={styles.section}>
-            <h4>1. Anamnese e Histórico</h4>
-            <textarea readOnly value={prontuario.anamnese || 'Nenhuma anamnese registrada.'} className={styles.textarea} />
+            <h4>1. Queixa Principal</h4>
+            <textarea 
+                readOnly 
+                value={prontuario.queixaPrincipal || 'Não registrada.'} 
+                className={styles.textarea} 
+            />
+        </div>
+
+        {/* CORREÇÃO 2: Histórico da Doença (Novo campo) */}
+        <div className={styles.section}>
+            <h4>2. Histórico da Doença</h4>
+            <textarea 
+                readOnly 
+                value={prontuario.historicoDoenca || 'Não registrado.'} 
+                className={styles.textarea} 
+            />
         </div>
         
+        {/* CORREÇÃO 3: Diagnóstico */}
         <div className={styles.section}>
-            <h4>2. Diagnóstico Principal</h4>
+            <h4>3. Diagnóstico Principal</h4>
             <p className={styles.diagnosisTag}>{prontuario.diagnostico || 'Não informado.'}</p>
         </div>
 
-        {/* Botões de Ação */}
+        {/* CORREÇÃO 4: Prescrição Médica (Visualização direta do texto) */}
+        <div className={styles.section}>
+            <h4>4. Prescrição Médica</h4>
+            <textarea 
+                readOnly 
+                value={prontuario.prescricaoMedica || 'Nenhuma prescrição registrada.'} 
+                className={styles.textarea} 
+            />
+        </div>
+
+        {/* Botões de Ação (Mantidos para lógica extra se houver listas) */}
         <div className={styles.actionButtons}>
+            {/* Só exibe o botão se houver lista de exames/meds separada, ou mantém como atalho */}
             <Botao onClick={handleExibirExames} className={styles.examButton}>
-                🧪 Exibir Exames ({prontuario.exames ? prontuario.exames.length : 0})
+                🧪 Exames Solicitados {prontuario.exames ? `(${prontuario.exames.length})` : ''}
             </Botao>
             <Botao onClick={handleExibirMedicamentos} className={styles.medButton}>
-                💊 Exibir Medicamentos ({prontuario.medicamentos ? prontuario.medicamentos.length : 0})
+                💊 Medicamentos {prontuario.medicamentos ? `(${prontuario.medicamentos.length})` : ''}
             </Botao>
         </div>
 
