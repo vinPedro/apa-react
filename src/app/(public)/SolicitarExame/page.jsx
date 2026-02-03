@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/AuthContext";
+import { jwtDecode } from "jwt-decode";
 
 import DivFormulario from "@/components/DivFormulario";
 import DivBotoes from "@/components/DivBotoes";
@@ -11,63 +12,86 @@ import Textarea from "@/components/Textarea";
 import FieldGroup from "@/components/FieldGroup";
 import Formulario from "@/components/Formulario";
 import AlertMessage from "@/components/AlertMessage";
+import Campo from "@/components/Campo"; 
 
 function SolicitarExameUX() {
     const { token, isAuthenticated } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
 
-    // Captura dados do paciente da URL (ex: ?id=1&nome=João)
-    const pacienteId = searchParams.get("pacienteId");
+    // PEGA O CPF DA URL AGORA!
+    const pacienteCpf = searchParams.get("cpf");
     const pacienteNome = searchParams.get("nome") || "Paciente";
 
     const [alert, setAlert] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [profissionalId, setProfissionalId] = useState(null);
 
     const initialFormData = {
-        descricaoExame: "",
-        motivoSolicitacao: "",
+        descricao: "", 
+        tipoExame: "",
+        prioridade: "NORMAL" 
     };
 
-    /* ======================
-       PROTEÇÃO DE ROTA
-    ====================== */
+    // 1. Busca Profissional
     useEffect(() => {
-        if (!isAuthenticated) router.push("/");
-    }, [isAuthenticated, router]);
+        if (!isAuthenticated) { router.push("/"); return; }
+        const fetchProfissionalId = async () => {
+            if (!token) return;
+            try {
+                const decoded = jwtDecode(token);
+                const cpfLogado = decoded.sub; 
+                const res = await fetch(`http://localhost:8080/api/profissionais/buscar?tipo=CPF&termo=${cpfLogado}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.length > 0) setProfissionalId(data[0].id);
+                }
+            } catch (error) { console.error("Erro auth", error); }
+        };
+        fetchProfissionalId();
+    }, [isAuthenticated, token, router]);
 
-    /* ======================
-       SALVAR EXAME
-    ====================== */
+    // 2. Salvar usando CPF
     const handleSalvar = async (formData) => {
-        if (!pacienteId) {
-            setAlert({ message: "Erro: Paciente não identificado.", variant: "error" });
+        if (!pacienteCpf) {
+            setAlert({ message: "ERRO: CPF do paciente não encontrado na URL.", variant: "error" });
+            return;
+        }
+        if (!profissionalId) {
+            setAlert({ message: "ERRO: Profissional não identificado.", variant: "error" });
             return;
         }
 
         setLoading(true);
         try {
+            const payload = {
+                pacienteCpf: pacienteCpf, // <--- MANDA O CPF
+                profissionalId: Number(profissionalId),
+                tipoExame: formData.tipoExame || "CLINICO",
+                dataSolicitacao: new Date().toISOString().split('T')[0],
+                descricao: formData.descricao,
+                prioridade: formData.prioridade || "NORMAL",
+                status: "PENDENTE" 
+            };
+
             const response = await fetch("http://localhost:8080/api/exames", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({
-                    pacienteId,
-                    ...formData,
-                    dataSolicitacao: new Date().toISOString(),
-                }),
+                body: JSON.stringify(payload),
             });
 
-            if (!response.ok) throw new Error("Erro ao salvar solicitação de exame.");
+            if (!response.ok) {
+                const errJson = await response.json().catch(() => ({}));
+                throw new Error(errJson.message || "Erro ao salvar solicitação.");
+            }
 
-            setAlert({ message: "Solicitação de exame salva com sucesso!", variant: "success" });
-            
-            // Redireciona de volta após um curto delay
-            setTimeout(() => {
-                router.back();
-            }, 2000);
+            setAlert({ message: "Solicitação enviada com sucesso!", variant: "success" });
+            setTimeout(() => router.back(), 1500);
 
         } catch (error) {
             setAlert({ message: error.message, variant: "error" });
@@ -76,54 +100,62 @@ function SolicitarExameUX() {
         }
     };
 
+    if (!pacienteCpf) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-8">
+                <h2 className="text-2xl font-bold text-red-600 mb-4">⚠️ Erro de Identificação</h2>
+                <p className="text-gray-600 mb-6">CPF do paciente não foi informado na navegação.</p>
+                <Botao onClick={() => router.back()}>Voltar</Botao>
+            </div>
+        );
+    }
+
     return (
         <DivFormulario maxWidth={800}>
             <div className="w-full mx-auto px-8">
-                {alert && (
-                    <AlertMessage {...alert} onClose={() => setAlert(null)} />
-                )}
+                {alert && <AlertMessage {...alert} onClose={() => setAlert(null)} />}
 
                 <Formulario
                     initialValues={initialFormData}
-                    titulo={`🧪 Solicitar Exame • ${pacienteNome}`}
+                    titulo={`🧪 Exame para CPF: ${pacienteCpf}`}
                     onSubmit={handleSalvar}
                 >
-                    {({ formData, handleChange }) => (
+                    {({ formData, handleChange, handleSelectChange }) => (
                         <div className="space-y-8">
-                            
-                            <FieldGroup title="📋 Detalhes do Exame">
+                            <FieldGroup title={`Paciente: ${pacienteNome}`}>
                                 <Textarea
-                                    name="descricaoExame"
-                                    label="Descrição do Exame"
-                                    placeholder="Ex: Hemograma completo, Creatinina, TSH..."
-                                    value={formData.descricaoExame}
+                                    name="descricao"
+                                    label="Descrição / Motivo"
+                                    value={formData.descricao}
                                     onChange={handleChange}
                                     required
+                                    placeholder="Descreva os exames..."
                                 />
-                                <Textarea
-                                    name="motivoSolicitacao"
-                                    label="Motivo da Solicitação"
-                                    placeholder="Descreva a justificativa clínica..."
-                                    value={formData.motivoSolicitacao}
-                                    onChange={handleChange}
-                                    required
-                                />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Campo 
+                                        label="Tipo de Exame"
+                                        name="tipoExame"
+                                        value={formData.tipoExame}
+                                        onChange={handleChange}
+                                    />
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Prioridade</label>
+                                        <select 
+                                            className="w-full p-2 border border-gray-300 rounded-md"
+                                            value={formData.prioridade}
+                                            onChange={(e) => handleSelectChange("prioridade", e.target.value)}
+                                        >
+                                            <option value="NORMAL">Normal</option>
+                                            <option value="PRIORIDADE">Urgência</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </FieldGroup>
 
                             <DivBotoes className="justify-end gap-4 mt-8">
-                                <Botao 
-                                    type="button" 
-                                    variant="secondary" 
-                                    onClick={() => router.back()}
-                                    disabled={loading}
-                                >
-                                    ⬅️ Voltar
-                                </Botao>
-                                <Botao 
-                                    type="submit" 
-                                    disabled={loading}
-                                >
-                                    {loading ? "Salvando..." : "💾 Salvar Solicitação"}
+                                <Botao type="button" variant="secondary" onClick={() => router.back()}>Cancelar</Botao>
+                                <Botao type="submit" disabled={loading || !profissionalId}>
+                                    {loading ? "Enviando..." : "💾 Enviar Solicitação"}
                                 </Botao>
                             </DivBotoes>
                         </div>
@@ -134,13 +166,6 @@ function SolicitarExameUX() {
     );
 }
 
-/* =============================
-    EXPORT COM SUSPENSE
-============================= */
 export default function SolicitarExamePage() {
-    return (
-        <Suspense fallback={<p className="text-center mt-10">Carregando formulário...</p>}>
-            <SolicitarExameUX />
-        </Suspense>
-    );
+    return <Suspense fallback={<p>Carregando...</p>}><SolicitarExameUX /></Suspense>;
 }

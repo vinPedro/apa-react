@@ -12,26 +12,29 @@ import Textarea from "@/components/Textarea";
 import FieldGroup from "@/components/FieldGroup";
 import Formulario from "@/components/Formulario";
 import AlertMessage from "@/components/AlertMessage";
+import ProntuarioModal from "@/components/Modal/ProntuarioModal"; 
 
-/* =============================
-    COMPONENTE PRINCIPAL
-============================= */
 function ProntuarioUX() {
     const { token, isAuthenticated } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
+    
+    // 1. CAPTURA IMEDIATA DOS IDS NA URL
     const atendimentoIdURL = searchParams.get("atendimentoId");
+    const pacienteIdURL = searchParams.get("pacienteId");
 
-    /* ===== CONTROLE ===== */
     const [step, setStep] = useState(1);
-
-    /* ===== BUSCA ===== */
     const [nomeBusca, setNomeBusca] = useState("");
     const [pacientes, setPacientes] = useState([]);
+    
     const [paciente, setPaciente] = useState(null);
 
-    /* ===== DADOS ===== */
+    // Estados do Histórico
     const [historicoConsultas, setHistoricoConsultas] = useState([]);
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
+    const [showDetailModal, setShowDetailModal] = useState(false);
+    const [selectedProntuario, setSelectedProntuario] = useState(null);
+    
     const [alert, setAlert] = useState(null);
     const [loading, setLoading] = useState(false);
 
@@ -41,40 +44,56 @@ function ProntuarioUX() {
         diagnostico: "",
     });
 
-    /* ======================
-        PROTEÇÃO E CARGA AUTOMÁTICA
-    ====================== */
     useEffect(() => {
         if (!isAuthenticated) {
             router.push("/");
             return;
         }
 
-        // Se vier da fila (com atendimentoId), busca dados vitais automaticamente
+        // Se veio da Fila (tem IDs na URL), carrega direto
         if (atendimentoIdURL && token) {
             recuperarDadosVitais(atendimentoIdURL);
         }
     }, [isAuthenticated, router, atendimentoIdURL, token]);
 
-    /* ======================
-        BUSCAR DADOS VITAIS (NOVO ENDPOINT)
-    ====================== */
-    const recuperarDadosVitais = async (id) => {
+    const recuperarDadosVitais = async (idAtendimento) => {
         setLoading(true);
         try {
-            const response = await fetch(`http://localhost:8080/api/atendimentos/${id}/dados-consulta`, {
+            const response = await fetch(`http://localhost:8080/api/atendimentos/${idAtendimento}/dados-consulta`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+            
             if (!response.ok) throw new Error("Erro ao carregar dados da triagem");
+            
             const dados = await response.json();
             
+            // Tenta garantir o CPF
+            let cpfPaciente = dados.pacienteCpf || dados.cpfPaciente;
+            
+            // Se o backend não mandou o CPF no DTO de atendimento, buscamos no cadastro do paciente
+            // Usamos o pacienteIdURL como fallback se o DTO falhar
+            const idPacienteFinal = dados.pacienteId || pacienteIdURL;
+
+            if (!cpfPaciente && idPacienteFinal) {
+                try {
+                    const resPac = await fetch(`http://localhost:8080/api/pacientes/${idPacienteFinal}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    if (resPac.ok) {
+                        const dPac = await resPac.json();
+                        cpfPaciente = dPac.cpf;
+                    }
+                } catch (e) { console.error("Falha ao buscar CPF extra", e); }
+            }
+
             setPaciente({
-                id: dados.pacienteId,
-                nomeCompleto: dados.pacienteNome,
+                id: idPacienteFinal, // Usa o ID garantido
+                cpf: cpfPaciente,
+                nomeCompleto: dados.pacienteNome || "Paciente", // Evita crash se nome vier nulo
                 peso: dados.peso,
                 altura: dados.altura,
                 pressaoArterial: dados.pressaoArterial,
-                atendimentoId: id
+                atendimentoId: idAtendimento
             });
             setStep(2);
         } catch (error) {
@@ -84,90 +103,81 @@ function ProntuarioUX() {
         }
     };
 
-    /* ======================
-        BUSCA AUTOMÁTICA (DEBOUNCE - MANTIDO)
-    ====================== */
-    useEffect(() => {
-        if (!nomeBusca || nomeBusca.length < 3 || atendimentoIdURL) {
-            setPacientes([]);
-            return;
+    // --- AÇÃO DO BOTÃO "SOLICITAR EXAME" ---
+    const irParaExames = () => {
+        // Tenta pegar o CPF do paciente carregado
+        const cpfParaUsar = paciente?.cpf;
+        const nomeParaUsar = paciente?.nomeCompleto || "Paciente";
+
+        if (cpfParaUsar) {
+            // Passa o CPF na URL em vez de (ou junto com) o ID
+            router.push(`/SolicitarExame?cpf=${cpfParaUsar}&nome=${encodeURIComponent(nomeParaUsar)}`);
+        } else {
+            setAlert({ message: "Erro: CPF do paciente não identificado.", variant: "error" });
+        }
+    };
+
+    // --- BUSCAR HISTÓRICO ---
+    const handleVisualizarHistorico = async () => {
+        // Tenta pegar CPF do estado, se não tiver, tenta buscar pelo ID da URL (caso extremo)
+        if (!paciente?.cpf) {
+             setAlert({ message: "CPF do paciente não identificado ainda. Aguarde carregamento.", variant: "warning" });
+             return;
         }
 
-        const timeout = setTimeout(() => {
-            buscarPaciente();
-        }, 500);
-
-        return () => clearTimeout(timeout);
-    }, [nomeBusca]);
-
-    /* ======================
-        BUSCAR PACIENTES (MANTIDO)
-    ====================== */
-    const buscarPaciente = async () => {
-        if (!token) return;
         setLoading(true);
         try {
-            const response = await fetch(
-                `http://localhost:8080/api/pacientes/buscar?tipo=NOME&termo=${encodeURIComponent(nomeBusca)}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            if (response.ok) setPacientes(await response.json());
-        } catch (error) {
-            setAlert({ message: "Erro ao buscar pacientes", variant: "error" });
+            const response = await fetch(`http://localhost:8080/api/prontuarios?cpfPaciente=${paciente.cpf}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            if (response.ok) {
+                const dados = await response.json();
+                if (!dados || dados.length === 0) {
+                    setAlert({ message: "Nenhum histórico anterior encontrado.", variant: "info" });
+                } else {
+                    setHistoricoConsultas(dados);
+                    setShowHistoryModal(true);
+                }
+            } else {
+                throw new Error("Erro ao buscar histórico.");
+            }
+        } catch (err) {
+            setAlert({ message: err.message, variant: "error" });
         } finally {
             setLoading(false);
         }
     };
 
-    /* ======================
-        ATENDER PACIENTE (INTERAÇÃO MANTIDA)
-    ====================== */
-    const atenderPaciente = async (p) => {
-        setPaciente(p);
-        setStep(2);
-        setPacientes([]);
-        setNomeBusca("");
-
-        try {
-            const response = await fetch(
-                `http://localhost:8080/api/prontuarios/paciente/${p.id}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            if (response.ok) setHistoricoConsultas(await response.json());
-        } catch {
-            setHistoricoConsultas([]);
-        }
+    const handleOpenDetail = (p) => {
+        setSelectedProntuario({
+            data: p.dataHoraFinalizacao ? new Date(p.dataHoraFinalizacao).toLocaleDateString() : '---',
+            medico: 'Médico Responsável', 
+            anamnese: `Queixa: ${p.queixaPrincipal}\nHistórico: ${p.historicoDoenca}`,
+            diagnostico: p.diagnostico,
+            medicamentos: p.prescricaoMedica ? [p.prescricaoMedica] : [],
+            exames: p.examesSolicitados ? [p.examesSolicitados] : []
+        });
+        setShowDetailModal(true);
     };
 
-    /* ======================
-        FINALIZAR ATENDIMENTO (SALVAR E REDIRECIONAR)
-    ====================== */
     const handleFinalizar = async (values) => {
         setLoading(true);
         try {
             const response = await fetch("http://localhost:8080/api/prontuarios", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
                 body: JSON.stringify({
-                    atendimentoId: Number(paciente.atendimentoId || atendimentoIdURL),
-                    pacienteId: Number(paciente.id),
+                    atendimentoId: Number(atendimentoIdURL), // Usa direto da URL para garantir
+                    pacienteId: Number(paciente?.id || pacienteIdURL),
                     queixaPrincipal: values.queixa,
                     historicoDoenca: values.historico,
                     diagnostico: values.diagnostico
                 }),
             });
-
             if (!response.ok) throw new Error("Erro ao salvar prontuário.");
-
-            setAlert({ message: "Prontuário salvo com sucesso!", variant: "success" });
-
-            setTimeout(() => {
-                router.push("/ProfissionalDeSaude");
-            }, 1500);
-
+            setAlert({ message: "Prontuário salvo!", variant: "success" });
+            setTimeout(() => router.push("/ProfissionalDeSaude"), 1500);
         } catch (error) {
             setAlert({ message: error.message, variant: "error" });
         } finally {
@@ -175,79 +185,112 @@ function ProntuarioUX() {
         }
     };
 
+    // Busca de paciente avulsa (mantida)
+    useEffect(() => {
+        if (!nomeBusca || nomeBusca.length < 3 || atendimentoIdURL) {
+            setPacientes([]); return;
+        }
+        const t = setTimeout(async () => {
+            if(!token) return;
+            try {
+                const r = await fetch(`http://localhost:8080/api/pacientes/buscar?tipo=NOME&termo=${encodeURIComponent(nomeBusca)}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if(r.ok) setPacientes(await r.json());
+            } catch {}
+        }, 500);
+        return () => clearTimeout(t);
+    }, [nomeBusca]);
+
     return (
         <DivFormulario maxWidth={1200}>
-            <div className="w-full mx-auto px-8">
+            <div className="w-full mx-auto px-8 relative">
                 {alert && <AlertMessage {...alert} onClose={() => setAlert(null)} />}
 
-                {/* ===== ETAPA 1 — BUSCA (MANTIDA IDÊNTICA) ===== */}
-                {step === 1 && (
-                    <div className="bg-white p-8 rounded-xl shadow-md max-w-4xl mx-auto">
-                        <h1 className="text-2xl font-semibold mb-6">🔎 Buscar Paciente</h1>
-                        <Campo label="Nome do Paciente" value={nomeBusca} onChange={(e) => setNomeBusca(e.target.value)} />
-                        {loading && <p className="mt-2 text-sm text-gray-500">Buscando...</p>}
-                        {pacientes.length > 0 && (
-                            <div className="mt-6 border rounded-lg overflow-hidden">
-                                <table className="w-full text-sm">
-                                    <thead className="bg-gray-100">
-                                        <tr>
-                                            <th className="p-3 text-left">Nome</th>
-                                            <th className="p-3 text-left">ID</th>
-                                            <th className="p-3 text-center">Ação</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {pacientes.map((p) => (
-                                            <tr key={p.id} className="border-t hover:bg-gray-50">
-                                                <td className="p-3">{p.nomeCompleto}</td>
-                                                <td className="p-3">{p.id}</td>
-                                                <td className="p-3 text-center">
-                                                    <Botao onClick={() => atenderPaciente(p)}>Atender</Botao>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                {/* MODAL LISTA DE HISTÓRICO */}
+                {showHistoryModal && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-lg p-6 max-w-lg w-full max-h-[80vh] overflow-auto shadow-2xl">
+                            <div className="flex justify-between items-center mb-4 border-b pb-2">
+                                <h3 className="text-xl font-bold text-gray-800">Histórico de Consultas</h3>
+                                <button onClick={() => setShowHistoryModal(false)} className="text-gray-500 hover:text-red-500 text-2xl">&times;</button>
                             </div>
-                        )}
+                            <div className="space-y-3">
+                                {historicoConsultas.map(h => (
+                                    <div 
+                                        key={h.id} 
+                                        className="border p-4 rounded hover:bg-blue-50 cursor-pointer transition"
+                                        onClick={() => handleOpenDetail(h)}
+                                    >
+                                        <p className="font-bold text-blue-700">
+                                            {h.dataHoraFinalizacao ? new Date(h.dataHoraFinalizacao).toLocaleDateString() : 'Data N/A'}
+                                        </p>
+                                        <p className="text-sm text-gray-600 truncate">{h.queixaPrincipal}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 )}
 
-                {/* ===== ETAPA 2 — PRONTUÁRIO (MANTIDA IDÊNTICA COM VITAIS DINÂMICOS) ===== */}
-                {step === 2 && paciente && (
-                    <Formulario
-                        initialValues={initialFormData}
-                        titulo={`📋 Prontuário • ${paciente.nomeCompleto}`}
-                        onSubmit={handleFinalizar}
-                    >
+                {showDetailModal && selectedProntuario && (
+                    <ProntuarioModal 
+                        prontuario={selectedProntuario} 
+                        onClose={() => setShowDetailModal(false)} 
+                    />
+                )}
+
+                {step === 1 && (
+                    <div className="bg-white p-8 rounded-xl shadow-md max-w-4xl mx-auto">
+                        <h1 className="text-2xl font-semibold mb-6">🔎 Buscar Paciente</h1>
+                        <Campo label="Nome" value={nomeBusca} onChange={(e) => setNomeBusca(e.target.value)} />
+                        {pacientes.map(p => (
+                            <div key={p.id} className="border-b p-2 flex justify-between">
+                                <span>{p.nomeCompleto}</span>
+                                <Botao onClick={() => { setPaciente({...p, atendimentoId: null}); setStep(2); }}>Atender</Botao>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {step === 2 && (
+                    <Formulario initialValues={initialFormData} titulo={`📋 ${paciente?.nomeCompleto || "Carregando..."}`} onSubmit={handleFinalizar}>
                         {({ formData, handleChange }) => (
-                            <div className="space-y-8 max-w-5xl mx-auto">
-                                <FieldGroup title="🧠 Anamnese">
-                                    <Textarea name="queixa" label="Queixa Principal" value={formData.queixa} onChange={handleChange} />
+                            <div className="space-y-6">
+                                <FieldGroup title="Anamnese">
+                                    <Textarea name="queixa" label="Queixa" value={formData.queixa} onChange={handleChange} />
                                     <Textarea name="historico" label="Histórico" value={formData.historico} onChange={handleChange} />
                                 </FieldGroup>
-
-                                <FieldGroup title="⚖️ Dados Vitais (Registrados)">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-3xl mx-auto">
-                                        <Campo label="Peso (kg)" value={paciente.peso ?? "---"} disabled />
-                                        <Campo label="Altura (cm)" value={paciente.altura ?? "---"} disabled />
-                                        <Campo label="Pressão Arterial" value={paciente.pressaoArterial ?? "---"} disabled />
+                                <FieldGroup title="Dados Vitais">
+                                    <div className="flex gap-4">
+                                        <Campo label="Peso" value={paciente?.peso || '-'} disabled />
+                                        <Campo label="Pressão" value={paciente?.pressaoArterial || '-'} disabled />
                                     </div>
                                 </FieldGroup>
-
-                                <FieldGroup title="🧾 Diagnóstico">
+                                <FieldGroup title="Diagnóstico">
                                     <Textarea name="diagnostico" value={formData.diagnostico} onChange={handleChange} />
                                 </FieldGroup>
-
-                                <DivBotoes className="justify-center flex-wrap gap-4">
-                                    <Botao type="button" onClick={() => router.push(`/SolicitarExame?pacienteId=${paciente.id}&nome=${encodeURIComponent(paciente.nomeCompleto)}`)}>
+                                <DivBotoes className="flex-wrap gap-2 justify-center">
+                                    
+                                    {/* BOTÃO AGORA CHAMA FUNÇÃO QUE VERIFICA URL COMO FALLBACK */}
+                                    <Botao 
+                                        type="button" 
+                                        onClick={irParaExames} 
+                                        className="bg-blue-600 hover:bg-blue-700"
+                                    >
                                         🧪 SOLICITAR EXAMES
                                     </Botao>
-                                    <Botao>💊 PREESCREVER RECEITAS</Botao>
-                                    <Botao>📝 ATRIBUIR ATESTADO</Botao>
-                                    <Botao>📚 VISUALIZAR HISTÓRICO</Botao>
+                                    
+                                    <Botao 
+                                        type="button" 
+                                        onClick={handleVisualizarHistorico} 
+                                        className="bg-purple-600 hover:bg-purple-700"
+                                    >
+                                        📚 HISTÓRICO
+                                    </Botao>
+                                    
                                     <Botao type="submit" className="bg-green-600 hover:bg-green-700" disabled={loading}>
-                                        {loading ? "SALVANDO..." : "✅ FINALIZAR ATENDIMENTO"}
+                                        {loading ? "Salvando..." : "FINALIZAR"}
                                     </Botao>
                                 </DivBotoes>
                             </div>
@@ -259,10 +302,6 @@ function ProntuarioUX() {
     );
 }
 
-export default function CadastroProntuarioPage() {
-    return (
-        <Suspense fallback={<p>Carregando...</p>}>
-            <ProntuarioUX />
-        </Suspense>
-    );
+export default function Page() {
+    return <Suspense fallback={<p>Carregando...</p>}><ProntuarioUX /></Suspense>;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { CheckCircle, AlertTriangle, XCircle } from "lucide-react";
+import { CheckCircle, AlertTriangle, XCircle, Info } from "lucide-react"; // Adicionei o Info
 
 const variants = {
     success: {
@@ -22,15 +22,23 @@ const variants = {
         text: "text-yellow-800",
         border: "border-yellow-300",
     },
+    // --- ADICIONADO O TIPO INFO ---
+    info: {
+        icon: <Info className="w-5 h-5" />,
+        bg: "bg-blue-100",
+        text: "text-blue-800",
+        border: "border-blue-300",
+    },
 };
 
 export default function AlertMessage({
     message,
-    variant = "success",
+    variant = "success", // Se vier vazio, usa success
     onClose,
     duration = 3000,
 }) {
-    const style = variants[variant];
+    // Proteção: Se passar um tipo que não existe (ex: "purple"), usa "info" como fallback para não quebrar
+    const style = variants[variant] || variants.info;
 
     useEffect(() => {
         if (!duration) return;
